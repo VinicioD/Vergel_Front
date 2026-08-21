@@ -1,0 +1,1 @@
+//Aquí van las funciones para conectar con el backend de Laravel.
