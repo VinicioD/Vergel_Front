@@ -20,6 +20,7 @@ import SchedulePage from "./modules/schedule/SchedulePage";
 import TransactionsPage from "./modules/transactions/TransactionsPage";
 import WalletPage from "./modules/wallet/WalletPage";
 import ProfilePage from "./modules/profile/ProfilePage";
+import UsersPage from "./modules/users/UsersPage";
 
 export default function AdminRoutes() {
   return (
@@ -40,6 +41,7 @@ export default function AdminRoutes() {
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="collaborators" element={<CollaboratorsPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="users" element={<UsersPage />} />
       </Route>
 
       {/* Redirección por defecto si la URL no existe o si entran solo a /admin */}

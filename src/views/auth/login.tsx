@@ -27,11 +27,13 @@ export default function Login() {
 
   // Se asigna directamente la variable importada sin comillas
   const bgLight = fondoLight;
-  const bgDark = "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=1000&auto=format&fit=crop";
+  const bgDark =
+    "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=1000&auto=format&fit=crop";
 
   return (
-    <div className={`min-h-screen w-full flex flex-col md:flex-row font-sans transition-colors duration-300 ${isDarkMode ? "bg-gray-900" : "bg-[#E3E3E3]"}`}>
-      
+    <div
+      className={`min-h-screen w-full flex flex-col md:flex-row font-sans transition-colors duration-300 ${isDarkMode ? "bg-gray-900" : "bg-[#E3E3E3]"}`}
+    >
       {/* Botón Flotante para cambiar Modo Oscuro / Claro */}
       <button
         onClick={toggleDarkMode}
@@ -39,7 +41,11 @@ export default function Login() {
         className="fixed top-4 right-4 z-50 p-2.5 rounded-full bg-white/80 dark:bg-gray-800/80 shadow-md backdrop-blur-sm text-gray-800 dark:text-gray-200 hover:scale-105 transition-all"
         title="Cambiar Modo"
       >
-        {isDarkMode ? <Sun size={20} className="text-amber-400" /> : <Moon size={20} className="text-gray-700" />}
+        {isDarkMode ? (
+          <Sun size={20} className="text-amber-400" />
+        ) : (
+          <Moon size={20} className="text-gray-700" />
+        )}
       </button>
 
       {/* Columna Izquierda: Imagen de Fondo (Se oculta en celulares, se muestra de MD en adelante) */}
@@ -53,10 +59,8 @@ export default function Login() {
 
       {/* Columna Derecha: Contenedor con Card adaptado a todos los tamaños */}
       <div className="w-full md:w-1/2 lg:w-5/12 min-h-screen md:min-h-0 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
-        
         {/* Card Contenedora */}
         <div className="w-full max-w-sm sm:max-w-md bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-100 dark:border-gray-700 transition-colors duration-300 flex flex-col items-center">
-          
           {/* Logo de la empresa en contenedor circular */}
           <div className="mb-4 sm:mb-6 flex justify-center w-full">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-50 dark:bg-gray-700/50 p-2 sm:p-3 flex items-center justify-center shadow-inner border border-gray-100 dark:border-gray-600">
@@ -65,11 +69,11 @@ export default function Login() {
                 alt="Logo Empresa"
                 className="w-full h-full object-contain rounded-full"
                 onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
           </div>
-        </div>
 
           <h2 className="text-xl sm:text-2xl font-bold text-[#2A3319] dark:text-gray-100 mb-1 text-center">
             ¡Hola de nuevo!
@@ -80,7 +84,6 @@ export default function Login() {
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-            
             {/* Campo Correo */}
             <div className="flex flex-col gap-1">
               <label className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -125,7 +128,6 @@ export default function Login() {
               ENTRAR
             </button>
           </form>
-
         </div>
       </div>
     </div>

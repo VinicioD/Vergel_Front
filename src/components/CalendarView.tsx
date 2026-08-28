@@ -35,7 +35,15 @@ export default function CalendarView({
   selectedDate,
   onSelectDate,
 }: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date(2024, 10, 1)); // Noviembre 2024 según mockup
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (selectedDate) {
+      // Si le pasas una fecha seleccionada (ej. "2026-08-27"), inicia en ese mes
+      const [y, m, d] = selectedDate.split("-").map(Number);
+      return new Date(y, m - 1, d || 1);
+    }
+    // Si no, toma la fecha de hoy
+    return new Date();
+  });
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();

@@ -11,6 +11,7 @@ import {
   BookOpen,
   ArrowRightLeft,
   UserCheck,
+  User,
 } from "lucide-react";
 
 export const adminMenu = [
@@ -26,6 +27,7 @@ export const adminMenu = [
   { name: "Catálogo", icon: BookOpen, path: "/admin/catalog" },
   { name: "Movimientos", icon: ArrowRightLeft, path: "/admin/transactions" },
   { name: "Colaboradores", icon: UserCheck, path: "/admin/collaborators" },
+  { name: "Usuarios", icon: User, path: "/admin/users" },
 ];
 
 export const userMenu = [
