@@ -10,7 +10,8 @@ const INITIAL_PRODUCTS = [
     category: "Macetas",
     price: "$15.00",
     stock: 24,
-    image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?q=80&w=500&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1485955900006-10f4d324d411?q=80&w=500&auto=format&fit=crop",
   },
   {
     id: 2,
@@ -18,7 +19,8 @@ const INITIAL_PRODUCTS = [
     category: "Herramientas",
     price: "$28.50",
     stock: 12,
-    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=500&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=500&auto=format&fit=crop",
   },
   {
     id: 3,
@@ -26,7 +28,8 @@ const INITIAL_PRODUCTS = [
     category: "Plantas",
     price: "$22.00",
     stock: 8,
-    image: "https://images.unsplash.com/photo-1614594975525-e45190c55d0b?q=80&w=500&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1614594975525-e45190c55d0b?q=80&w=500&auto=format&fit=crop",
   },
   {
     id: 4,
@@ -34,7 +37,8 @@ const INITIAL_PRODUCTS = [
     category: "Accesorios",
     price: "$18.99",
     stock: 15,
-    image: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=500&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=500&auto=format&fit=crop",
   },
 ];
 
@@ -42,17 +46,25 @@ export default function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
 
-  const categories = ["Todos", "Macetas", "Herramientas", "Plantas", "Accesorios"];
+  const categories = [
+    "Todos",
+    "Macetas",
+    "Herramientas",
+    "Plantas",
+    "Accesorios",
+  ];
 
   const filteredProducts = INITIAL_PRODUCTS.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory;
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "Todos" || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-      
+    <div className="min-h-screen w-full bg-transparent dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
       {/* Encabezado Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
@@ -72,10 +84,12 @@ export default function CatalogPage() {
 
       {/* Barra de Filtros y Búsqueda Responsive */}
       <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        
         {/* Buscador */}
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Buscar producto..."
@@ -87,7 +101,10 @@ export default function CatalogPage() {
 
         {/* Categorías deslizables horizontalmente en celulares */}
         <div className="w-full md:w-auto flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
-          <Filter size={16} className="text-gray-400 shrink-0 hidden sm:block" />
+          <Filter
+            size={16}
+            className="text-gray-400 shrink-0 hidden sm:block"
+          />
           {categories.map((cat) => (
             <button
               key={cat}
@@ -131,7 +148,10 @@ export default function CatalogPage() {
                     {product.name}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Stock disponible: <span className="font-semibold text-gray-700 dark:text-gray-300">{product.stock} unids.</span>
+                    Stock disponible:{" "}
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">
+                      {product.stock} unids.
+                    </span>
                   </p>
                 </div>
               </div>
@@ -155,7 +175,8 @@ export default function CatalogPage() {
             No se encontraron productos
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Intenta cambiar los términos de búsqueda o los filtros seleccionados.
+            Intenta cambiar los términos de búsqueda o los filtros
+            seleccionados.
           </p>
         </div>
       )}

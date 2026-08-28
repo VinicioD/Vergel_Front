@@ -1,68 +1,71 @@
 // src/views/admin/modules/history/HistoryPage.tsx
-import React, { useState } from 'react';
-import { Search, Calendar, Plus, X } from 'lucide-react';
-import Form, { type HistoryTransaction } from './Form';
+import React, { useState } from "react";
+import { Search, Calendar, Plus, X } from "lucide-react";
+import Form, { type HistoryTransaction } from "./Form";
 
 const INITIAL_TRANSACTIONS: HistoryTransaction[] = [
   {
     id: 1,
-    date: '24 Oct 2024',
-    type: 'Ingreso',
-    description: 'Pago Cotización COT-2024-001',
-    client: 'Inmobiliaria Bosques',
-    method: 'Transferencia',
-    amount: '+$3,450.00',
+    date: "24 Oct 2024",
+    type: "Ingreso",
+    description: "Pago Cotización COT-2024-001",
+    client: "Inmobiliaria Bosques",
+    method: "Transferencia",
+    amount: "+$3,450.00",
   },
   {
     id: 2,
-    date: '23 Oct 2024',
-    type: 'Egreso',
-    description: 'Compra de Fertilizantes Nitrofoska',
-    client: 'Insumos Agrícolas SAC',
-    method: 'Tarjeta de Crédito',
-    amount: '-$620.00',
+    date: "23 Oct 2024",
+    type: "Egreso",
+    description: "Compra de Fertilizantes Nitrofoska",
+    client: "Insumos Agrícolas SAC",
+    method: "Tarjeta de Crédito",
+    amount: "-$620.00",
   },
   {
     id: 3,
-    date: '22 Oct 2024',
-    type: 'Ingreso',
-    description: 'Suscripción Plan Profesional',
-    client: 'Club Campestre',
-    method: 'Débito Automático',
-    amount: '+$1,890.00',
+    date: "22 Oct 2024",
+    type: "Ingreso",
+    description: "Suscripción Plan Profesional",
+    client: "Club Campestre",
+    method: "Débito Automático",
+    amount: "+$1,890.00",
   },
   {
     id: 4,
-    date: '18 Oct 2024',
-    type: 'Egreso',
-    description: 'Repuestos Cortadora Husqvarna',
-    client: 'Maquinarias El Jardín',
-    method: 'Efectivo',
-    amount: '-$145.00',
+    date: "18 Oct 2024",
+    type: "Egreso",
+    description: "Repuestos Cortadora Husqvarna",
+    client: "Maquinarias El Jardín",
+    method: "Efectivo",
+    amount: "-$145.00",
   },
   {
     id: 5,
-    date: '18 Oct 2024',
-    type: 'Ingreso',
-    description: 'Asesoría Técnica Especializada',
-    client: 'Finca Los Jazmines',
-    method: 'PayPal',
-    amount: '+$350.00',
+    date: "18 Oct 2024",
+    type: "Ingreso",
+    description: "Asesoría Técnica Especializada",
+    client: "Finca Los Jazmines",
+    method: "PayPal",
+    amount: "+$350.00",
   },
 ];
 
 export default function HistoryPage() {
-  const [transactions, setTransactions] = useState<HistoryTransaction[]>(INITIAL_TRANSACTIONS);
-  const [filterType, setFilterType] = useState<'Todos' | 'Ingresos' | 'Egresos'>('Todos');
-  const [dateRange, setDateRange] = useState('30dias');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [transactions, setTransactions] =
+    useState<HistoryTransaction[]>(INITIAL_TRANSACTIONS);
+  const [filterType, setFilterType] = useState<
+    "Todos" | "Ingresos" | "Egresos"
+  >("Todos");
+  const [dateRange, setDateRange] = useState("30dias");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Filtrado de Datos
   const filteredTransactions = transactions.filter((item) => {
     // Filtro por SegmentedControl
-    if (filterType === 'Ingresos' && item.type !== 'Ingreso') return false;
-    if (filterType === 'Egresos' && item.type !== 'Egreso') return false;
+    if (filterType === "Ingresos" && item.type !== "Ingreso") return false;
+    if (filterType === "Egresos" && item.type !== "Egreso") return false;
 
     // Filtro por Búsqueda (Buscador)
     const matchSearch =
@@ -74,9 +77,9 @@ export default function HistoryPage() {
   });
 
   const handleSaveTransaction = (data: HistoryTransaction) => {
-    const isIngreso = data.type === 'Ingreso';
-    const formattedAmount = `${isIngreso ? '+' : '-'}$${parseFloat(data.amount || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    
+    const isIngreso = data.type === "Ingreso";
+    const formattedAmount = `${isIngreso ? "+" : "-"}$${parseFloat(data.amount || "0").toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+
     const newTx: HistoryTransaction = {
       ...data,
       id: Date.now(),
@@ -87,8 +90,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#f6f5f0] dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-      
+    <div className="min-h-screen w-full bg-transparent dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
@@ -113,38 +115,37 @@ export default function HistoryPage() {
 
       {/* Barra de Filtros: SegmentedControl + DateRangePicker + Search */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-6">
-        
         {/* 1. SegmentedControl (Todos / Ingresos / Egresos) */}
         <div className="inline-flex p-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200/80 dark:border-gray-700 self-start">
           <button
             type="button"
-            onClick={() => setFilterType('Todos')}
+            onClick={() => setFilterType("Todos")}
             className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              filterType === 'Todos'
-                ? 'bg-[#6C7D38] text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              filterType === "Todos"
+                ? "bg-[#6C7D38] text-white shadow-sm"
+                : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             Todos
           </button>
           <button
             type="button"
-            onClick={() => setFilterType('Ingresos')}
+            onClick={() => setFilterType("Ingresos")}
             className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              filterType === 'Ingresos'
-                ? 'bg-[#6C7D38] text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              filterType === "Ingresos"
+                ? "bg-[#6C7D38] text-white shadow-sm"
+                : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             Ingresos
           </button>
           <button
             type="button"
-            onClick={() => setFilterType('Egresos')}
+            onClick={() => setFilterType("Egresos")}
             className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              filterType === 'Egresos'
-                ? 'bg-[#6C7D38] text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              filterType === "Egresos"
+                ? "bg-[#6C7D38] text-white shadow-sm"
+                : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             Egresos
@@ -153,7 +154,6 @@ export default function HistoryPage() {
 
         {/* 2. Controles de la Derecha: DateRangePicker y Buscador */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-          
           {/* DateRangePicker Component */}
           <div className="relative inline-flex items-center bg-white dark:bg-gray-800 rounded-xl px-3 py-2 border border-gray-200 dark:border-gray-700 shadow-sm text-xs text-gray-700 dark:text-gray-200">
             <Calendar size={15} className="text-gray-400 mr-2 shrink-0" />
@@ -162,16 +162,27 @@ export default function HistoryPage() {
               onChange={(e) => setDateRange(e.target.value)}
               className="bg-transparent text-xs text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer pr-2 font-medium"
             >
-              <option value="7dias" className="dark:bg-gray-800">Últimos 7 días</option>
-              <option value="30dias" className="dark:bg-gray-800">Últimos 30 días</option>
-              <option value="mesActual" className="dark:bg-gray-800">Este mes</option>
-              <option value="anoActual" className="dark:bg-gray-800">Este año</option>
+              <option value="7dias" className="dark:bg-gray-800">
+                Últimos 7 días
+              </option>
+              <option value="30dias" className="dark:bg-gray-800">
+                Últimos 30 días
+              </option>
+              <option value="mesActual" className="dark:bg-gray-800">
+                Este mes
+              </option>
+              <option value="anoActual" className="dark:bg-gray-800">
+                Este año
+              </option>
             </select>
           </div>
 
           {/* Search Input */}
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <Search
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              size={16}
+            />
             <input
               type="text"
               placeholder="Buscar transacción..."
@@ -180,9 +191,7 @@ export default function HistoryPage() {
               className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6C7D38] shadow-sm"
             />
           </div>
-
         </div>
-
       </div>
 
       {/* Tabla Estilizada */}
@@ -194,8 +203,12 @@ export default function HistoryPage() {
                 <th className="py-4 px-4 sm:px-6">Fecha</th>
                 <th className="py-4 px-4 sm:px-6">Tipo</th>
                 <th className="py-4 px-4 sm:px-6">Descripción</th>
-                <th className="py-4 px-4 sm:px-6 hidden md:table-cell">Socio / Cliente</th>
-                <th className="py-4 px-4 sm:px-6 hidden lg:table-cell">Método</th>
+                <th className="py-4 px-4 sm:px-6 hidden md:table-cell">
+                  Socio / Cliente
+                </th>
+                <th className="py-4 px-4 sm:px-6 hidden lg:table-cell">
+                  Método
+                </th>
                 <th className="py-4 px-4 sm:px-6 text-right">Monto</th>
               </tr>
             </thead>
@@ -215,9 +228,9 @@ export default function HistoryPage() {
                     <td className="py-4 px-4 sm:px-6 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                          item.type === 'Ingreso'
-                            ? 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                            : 'bg-rose-100/80 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                          item.type === "Ingreso"
+                            ? "bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : "bg-rose-100/80 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
                         }`}
                       >
                         {item.type}
@@ -236,7 +249,7 @@ export default function HistoryPage() {
 
                     {/* Socio / Cliente */}
                     <td className="py-4 px-4 sm:px-6 hidden md:table-cell text-gray-500 dark:text-gray-400">
-                      {item.client || '-'}
+                      {item.client || "-"}
                     </td>
 
                     {/* Método */}
@@ -247,9 +260,9 @@ export default function HistoryPage() {
                     {/* Monto */}
                     <td
                       className={`py-4 px-4 sm:px-6 text-right font-bold whitespace-nowrap text-sm ${
-                        item.type === 'Ingreso'
-                          ? 'text-[#2A3319] dark:text-emerald-400'
-                          : 'text-rose-600 dark:text-rose-400'
+                        item.type === "Ingreso"
+                          ? "text-[#2A3319] dark:text-emerald-400"
+                          : "text-rose-600 dark:text-rose-400"
                       }`}
                     >
                       {item.amount}
@@ -258,8 +271,12 @@ export default function HistoryPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-400 text-xs">
-                    No se encontraron transacciones que coincidan con la búsqueda.
+                  <td
+                    colSpan={6}
+                    className="py-8 text-center text-gray-400 text-xs"
+                  >
+                    No se encontraron transacciones que coincidan con la
+                    búsqueda.
                   </td>
                 </tr>
               )}
@@ -285,7 +302,6 @@ export default function HistoryPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

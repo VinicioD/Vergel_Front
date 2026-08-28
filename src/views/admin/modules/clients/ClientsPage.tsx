@@ -1,7 +1,16 @@
 // src/views/admin/modules/clients/ClientsPage.tsx
-import React, { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Phone, Mail, MapPin, X } from 'lucide-react';
-import Form, { type ClientData } from './Form';
+import React, { useState } from "react";
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Phone,
+  Mail,
+  MapPin,
+  X,
+} from "lucide-react";
+import Form, { type ClientData } from "./Form";
 
 interface Client extends ClientData {
   id: number;
@@ -11,40 +20,40 @@ interface Client extends ClientData {
 const INITIAL_CLIENTS: Client[] = [
   {
     id: 1,
-    name: 'Condominio Los Olivos',
-    clientType: 'Corporativo',
-    phone: '+51 987 111 222',
-    email: 'administracion@losolivos.pe',
-    address: 'Av. Las Flores 450, San Isidro',
-    status: 'Activo',
-    initials: 'CL',
+    name: "Condominio Los Olivos",
+    clientType: "Corporativo",
+    phone: "+51 987 111 222",
+    email: "administracion@losolivos.pe",
+    address: "Av. Las Flores 450, San Isidro",
+    status: "Activo",
+    initials: "CL",
   },
   {
     id: 2,
-    name: 'María García',
-    clientType: 'Residencial',
-    phone: '+51 981 333 444',
-    email: 'maria.garcia@gmail.com',
-    address: 'Calle Los Pinos 120, Miraflores',
-    status: 'Activo',
-    initials: 'MG',
+    name: "María García",
+    clientType: "Residencial",
+    phone: "+51 981 333 444",
+    email: "maria.garcia@gmail.com",
+    address: "Calle Los Pinos 120, Miraflores",
+    status: "Activo",
+    initials: "MG",
   },
   {
     id: 3,
-    name: 'Corporación GreenOffice',
-    clientType: 'Corporativo',
-    phone: '+51 912 555 666',
-    email: 'contacto@greenoffice.com',
-    address: 'Av. Javier Prado Este 2050, San Borja',
-    status: 'Inactivo',
-    initials: 'CG',
+    name: "Corporación GreenOffice",
+    clientType: "Corporativo",
+    phone: "+51 912 555 666",
+    email: "contacto@greenoffice.com",
+    address: "Av. Javier Prado Este 2050, San Borja",
+    status: "Inactivo",
+    initials: "CG",
   },
 ];
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
@@ -52,7 +61,7 @@ export default function ClientsPage() {
     (client) =>
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.clientType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase())
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleOpenAddModal = () => {
@@ -73,30 +82,39 @@ export default function ClientsPage() {
             ? {
                 ...c,
                 ...data,
-                initials: data.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2),
+                initials: data.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2),
               }
-            : c
-        )
+            : c,
+        ),
       );
     } else {
       const newClient: Client = {
         ...data,
         id: Date.now(),
-        initials: data.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2),
+        initials: data.name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2),
       };
       setClients((prev) => [...prev, newClient]);
     }
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
+    if (confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
       setClients((prev) => prev.filter((c) => c.id !== id));
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#f6f5f0] dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-      
+    <div className="min-h-screen w-full bg-transparent dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
       {/* Encabezado y Botón Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
@@ -140,8 +158,12 @@ export default function ClientsPage() {
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 text-[11px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <th className="py-4 px-4 sm:px-6">Cliente</th>
-                <th className="py-4 px-4 sm:px-6 hidden md:table-cell">Contacto</th>
-                <th className="py-4 px-4 sm:px-6 hidden lg:table-cell">Dirección</th>
+                <th className="py-4 px-4 sm:px-6 hidden md:table-cell">
+                  Contacto
+                </th>
+                <th className="py-4 px-4 sm:px-6 hidden lg:table-cell">
+                  Dirección
+                </th>
                 <th className="py-4 px-4 sm:px-6">Estado</th>
                 <th className="py-4 px-4 sm:px-6 text-center">Acciones</th>
               </tr>
@@ -195,9 +217,9 @@ export default function ClientsPage() {
                     <td className="py-4 px-4 sm:px-6">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                          client.status === 'Activo'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                          client.status === "Activo"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
                         }`}
                       >
                         {client.status}

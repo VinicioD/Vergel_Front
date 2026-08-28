@@ -1,7 +1,7 @@
 // src/views/admin/modules/plans/PlansPage.tsx
-import React, { useState } from 'react';
-import { Check, X } from 'lucide-react';
-import Form, { type PlanChangeData } from './Form';
+import React, { useState } from "react";
+import { Check, X } from "lucide-react";
+import Form, { type PlanChangeData } from "./Form";
 
 interface Plan {
   id: string;
@@ -15,56 +15,57 @@ interface Plan {
 
 const PLANS: Plan[] = [
   {
-    id: 'basic',
-    name: 'Plan Básico',
-    price: '$29',
-    period: '/ mes',
-    subtitle: 'Para jardineros independientes',
+    id: "basic",
+    name: "Plan Básico",
+    price: "$29",
+    period: "/ mes",
+    subtitle: "Para jardineros independientes",
     features: [
-      'Hasta 50 clientes registrados',
-      'Agenda de visitas básicas',
-      'Cotizaciones limitadas (10/mes)',
-      'Soporte por correo electrónico',
-      'Acceso desde app móvil',
+      "Hasta 50 clientes registrados",
+      "Agenda de visitas básicas",
+      "Cotizaciones limitadas (10/mes)",
+      "Soporte por correo electrónico",
+      "Acceso desde app móvil",
     ],
   },
   {
-    id: 'pro',
-    name: 'Plan Profesional',
-    price: '$79',
-    period: '/ mes',
-    subtitle: 'Ideal para empresas consolidadas',
+    id: "pro",
+    name: "Plan Profesional",
+    price: "$79",
+    period: "/ mes",
+    subtitle: "Ideal para empresas consolidadas",
     isActive: true,
     features: [
-      'Clientes ilimitados',
-      'Control de Agenda y GPS integrado',
-      'Cotizaciones ilimitadas',
-      'Módulo de Finanzas y Reportes',
-      'Catálogo de plantas extendido',
-      'Soporte preferente 24/7',
+      "Clientes ilimitados",
+      "Control de Agenda y GPS integrado",
+      "Cotizaciones ilimitadas",
+      "Módulo de Finanzas y Reportes",
+      "Catálogo de plantas extendido",
+      "Soporte preferente 24/7",
     ],
   },
   {
-    id: 'enterprise',
-    name: 'Plan Empresarial',
-    price: '$149',
-    period: '/ mes',
-    subtitle: 'Para múltiples colaboradores y viveros',
+    id: "enterprise",
+    name: "Plan Empresarial",
+    price: "$149",
+    period: "/ mes",
+    subtitle: "Para múltiples colaboradores y viveros",
     features: [
-      'Todo lo de Profesional',
-      'Hasta 10 colaboradores activos',
-      'API para integración de viveros',
-      'Gestor de tarifas personalizadas',
-      'Capacitación mensual 1-on-1',
-      'Backup en la nube dedicado',
+      "Todo lo de Profesional",
+      "Hasta 10 colaboradores activos",
+      "API para integración de viveros",
+      "Gestor de tarifas personalizadas",
+      "Capacitación mensual 1-on-1",
+      "Backup en la nube dedicado",
     ],
   },
 ];
 
 export default function PlansPage() {
-  const [activePlanId, setActivePlanId] = useState<string>('pro');
+  const [activePlanId, setActivePlanId] = useState<string>("pro");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPlanForModal, setSelectedPlanForModal] = useState<string>('Plan Profesional');
+  const [selectedPlanForModal, setSelectedPlanForModal] =
+    useState<string>("Plan Profesional");
 
   const handleOpenModal = (planName: string) => {
     setSelectedPlanForModal(planName);
@@ -81,15 +82,15 @@ export default function PlansPage() {
   const currentPlan = PLANS.find((p) => p.id === activePlanId) || PLANS[1];
 
   return (
-    <div className="min-h-screen w-full bg-[#f6f5f0] dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-      
+    <div className="min-h-screen w-full bg-transparent dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
       {/* Encabezado Principal */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#2A3319] dark:text-gray-100">
           Planes de Suscripción
         </h1>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Selecciona o cambia el plan de software que mejor se adapte a tu escala de operaciones
+          Selecciona o cambia el plan de software que mejor se adapte a tu
+          escala de operaciones
         </p>
       </div>
 
@@ -99,7 +100,9 @@ export default function PlansPage() {
           <Check size={14} strokeWidth={3} />
         </div>
         <p className="text-xs sm:text-sm font-medium text-[#2A3319] dark:text-emerald-200">
-          Tu suscripción actual es el <span className="font-bold">{currentPlan.name}</span>. Siguiente facturación el 15 de Noviembre de 2024.
+          Tu suscripción actual es el{" "}
+          <span className="font-bold">{currentPlan.name}</span>. Siguiente
+          facturación el 15 de Noviembre de 2024.
         </p>
       </div>
 
@@ -113,8 +116,8 @@ export default function PlansPage() {
               key={plan.id}
               className={`relative bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 shadow-sm ${
                 isCurrentActive
-                  ? 'border-2 border-[#6C7D38] dark:border-emerald-500 shadow-md ring-1 ring-[#6C7D38]/20'
-                  : 'border border-gray-100 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600'
+                  ? "border-2 border-[#6C7D38] dark:border-emerald-500 shadow-md ring-1 ring-[#6C7D38]/20"
+                  : "border border-gray-100 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600"
               }`}
             >
               <div>
@@ -148,8 +151,15 @@ export default function PlansPage() {
                 {/* Lista de Características */}
                 <ul className="py-5 flex flex-col gap-3">
                   {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5 text-xs text-gray-600 dark:text-gray-300">
-                      <Check size={14} className="text-[#6C7D38] dark:text-emerald-400 shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2.5 text-xs text-gray-600 dark:text-gray-300"
+                    >
+                      <Check
+                        size={14}
+                        className="text-[#6C7D38] dark:text-emerald-400 shrink-0 mt-0.5"
+                        strokeWidth={2.5}
+                      />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -199,7 +209,6 @@ export default function PlansPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

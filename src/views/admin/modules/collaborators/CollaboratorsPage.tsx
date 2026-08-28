@@ -1,8 +1,17 @@
 // src/views/admin/modules/collaborators/CollaboratorsPage.tsx
-import React, { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Phone, Mail, MapPin, X } from 'lucide-react';
-import Button from '../../../../components/Button';
-import Form, { type CollaboratorData } from './Form';
+import React, { useState } from "react";
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Phone,
+  Mail,
+  MapPin,
+  X,
+} from "lucide-react";
+import Button from "../../../../components/Button";
+import Form, { type CollaboratorData } from "./Form";
 
 interface Collaborator extends CollaboratorData {
   id: number;
@@ -12,50 +21,53 @@ interface Collaborator extends CollaboratorData {
 const INITIAL_COLLABORATORS: Collaborator[] = [
   {
     id: 1,
-    name: 'Mateo Torres',
-    role: 'Jardinero',
-    phone: '+51 987 654 321',
-    email: 'mateo.torres@verdecito.com',
-    zone: 'Lima Central',
-    status: 'Activo',
-    initials: 'MT',
+    name: "Mateo Torres",
+    role: "Jardinero",
+    phone: "+51 987 654 321",
+    email: "mateo.torres@verdecito.com",
+    zone: "Lima Central",
+    status: "Activo",
+    initials: "MT",
   },
   {
     id: 2,
-    name: 'Sofía Rojas',
-    role: 'Inspector',
-    phone: '+51 981 123 456',
-    email: 'sofia.rojas@verdecito.com',
-    zone: 'Surco - Miraflores',
-    status: 'Activo',
-    initials: 'SR',
+    name: "Sofía Rojas",
+    role: "Inspector",
+    phone: "+51 981 123 456",
+    email: "sofia.rojas@verdecito.com",
+    zone: "Surco - Miraflores",
+    status: "Activo",
+    initials: "SR",
   },
   {
     id: 3,
-    name: 'Andrés Gómez',
-    role: 'Inspector',
-    phone: '+51 912 345 678',
-    email: 'andres.gomez@verdecito.com',
-    zone: 'Norte Provincias',
-    status: 'Inactivo',
-    initials: 'AG',
+    name: "Andrés Gómez",
+    role: "Inspector",
+    phone: "+51 912 345 678",
+    email: "andres.gomez@verdecito.com",
+    zone: "Norte Provincias",
+    status: "Inactivo",
+    initials: "AG",
   },
 ];
 
 export default function CollaboratorsPage() {
-  const [collaborators, setCollaborators] = useState<Collaborator[]>(INITIAL_COLLABORATORS);
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [collaborators, setCollaborators] = useState<Collaborator[]>(
+    INITIAL_COLLABORATORS,
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+
   // Estado para controlar la modal del formulario
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null);
+  const [selectedCollaborator, setSelectedCollaborator] =
+    useState<Collaborator | null>(null);
 
   // Filtrado dinámico por nombre, rol o email
   const filteredCollaborators = collaborators.filter(
     (collab) =>
       collab.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       collab.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      collab.email.toLowerCase().includes(searchTerm.toLowerCase())
+      collab.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Abrir Modal para Agregar Nuevo
@@ -80,17 +92,27 @@ export default function CollaboratorsPage() {
             ? {
                 ...c,
                 ...data,
-                initials: data.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2),
+                initials: data.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2),
               }
-            : c
-        )
+            : c,
+        ),
       );
     } else {
       // Crear
       const newCollab: Collaborator = {
         ...data,
         id: Date.now(),
-        initials: data.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2),
+        initials: data.name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2),
       };
       setCollaborators((prev) => [...prev, newCollab]);
     }
@@ -98,14 +120,13 @@ export default function CollaboratorsPage() {
 
   // Eliminar Colaborador
   const handleDelete = (id: number) => {
-    if (confirm('¿Estás seguro de que deseas eliminar este colaborador?')) {
+    if (confirm("¿Estás seguro de que deseas eliminar este colaborador?")) {
       setCollaborators((prev) => prev.filter((c) => c.id !== id));
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#f6f5f0] dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-      
+    <div className="min-h-screen w-full bg-transparent dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
       {/* Encabezado y Botón Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
@@ -120,7 +141,7 @@ export default function CollaboratorsPage() {
         <Button
           type="button"
           onClick={handleOpenAddModal}
-          style={{ backgroundColor: '#6C7D38', color: '#FFFFFF' }}
+          style={{ backgroundColor: "#6C7D38", color: "#FFFFFF" }}
           className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm shadow-sm hover:brightness-110 transition-all cursor-pointer whitespace-nowrap"
         >
           <Plus size={18} strokeWidth={2.5} />
@@ -149,8 +170,12 @@ export default function CollaboratorsPage() {
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 text-[11px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <th className="py-4 px-4 sm:px-6">Colaborador</th>
-                <th className="py-4 px-4 sm:px-6 hidden md:table-cell">Contacto</th>
-                <th className="py-4 px-4 sm:px-6 hidden lg:table-cell">Zona de Trabajo</th>
+                <th className="py-4 px-4 sm:px-6 hidden md:table-cell">
+                  Contacto
+                </th>
+                <th className="py-4 px-4 sm:px-6 hidden lg:table-cell">
+                  Zona de Trabajo
+                </th>
                 <th className="py-4 px-4 sm:px-6">Estado</th>
                 <th className="py-4 px-4 sm:px-6 text-center">Acciones</th>
               </tr>
@@ -209,9 +234,9 @@ export default function CollaboratorsPage() {
                     <td className="py-4 px-4 sm:px-6">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                          collab.status === 'Activo'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                          collab.status === "Activo"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
                         }`}
                       >
                         {collab.status}
