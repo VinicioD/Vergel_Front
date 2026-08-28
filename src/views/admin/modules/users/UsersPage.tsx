@@ -121,23 +121,6 @@ export default function UsersPage() {
             Administra accesos, roles y perfiles del personal de la plataforma
           </p>
         </div>
-
-        {/* Tarjeta de Usuario Actual */}
-        <div className="flex items-center gap-3 bg-white dark:bg-gray-800 p-2 pr-4 sm:pr-5 rounded-full border border-gray-200/80 dark:border-gray-700 shadow-sm self-end sm:self-auto">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100"
-            alt="Carlos Huerta"
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
-          />
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
-              Carlos Huerta
-            </span>
-            <span className="text-[10px] text-gray-500 dark:text-gray-400">
-              Administrador
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* FILTROS Y ACCIONES SUPERIORES */}
