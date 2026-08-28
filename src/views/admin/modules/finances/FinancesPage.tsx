@@ -1,19 +1,18 @@
 // src/views/admin/modules/finances/FinancesPage.tsx
-import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
-import Form, { type FinanceTransactionData } from './Form';
+import React, { useState } from "react";
+import { Plus, X } from "lucide-react";
+import Form, { type FinanceTransactionData } from "./Form";
 
 export default function FinancesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSaveTransaction = (data: FinanceTransactionData) => {
     // Aquí puedes conectar el estado o enviar la petición al backend
-    console.log('Nueva transacción guardada:', data);
+    console.log("Nueva transacción guardada:", data);
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#f6f5f0] dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-      
+    <div className="min-h-screen w-full bg-transparent dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
       {/* Encabezado Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
@@ -38,7 +37,6 @@ export default function FinancesPage() {
 
       {/* Grid de Cards Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        
         {/* Ingresos del Mes */}
         <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60 flex flex-col justify-between">
           <span className="text-[11px] font-bold tracking-wider text-gray-400 dark:text-gray-400 uppercase">
@@ -98,12 +96,10 @@ export default function FinancesPage() {
             </span>
           </div>
         </div>
-
       </div>
 
       {/* Sección Gráficos e Informes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Gráfico Comparativo: Ingresos vs Egresos */}
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60">
           <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-6">
@@ -114,48 +110,80 @@ export default function FinancesPage() {
             {/* Mayo */}
             <div>
               <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">
-                <span className="font-bold text-gray-800 dark:text-gray-200">Mayo</span>
+                <span className="font-bold text-gray-800 dark:text-gray-200">
+                  Mayo
+                </span>
                 <span>Ingresos: $8.2k | Egresos: $3.1k</span>
               </div>
               <div className="w-full bg-gray-100 dark:bg-gray-700/50 rounded-full h-3 overflow-hidden flex gap-1 p-0.5">
-                <div className="bg-[#6C7D38] h-full rounded-full transition-all duration-500" style={{ width: '65%' }}></div>
-                <div className="bg-[#D88A63] h-full rounded-full transition-all duration-500" style={{ width: '25%' }}></div>
+                <div
+                  className="bg-[#6C7D38] h-full rounded-full transition-all duration-500"
+                  style={{ width: "65%" }}
+                ></div>
+                <div
+                  className="bg-[#D88A63] h-full rounded-full transition-all duration-500"
+                  style={{ width: "25%" }}
+                ></div>
               </div>
             </div>
 
             {/* Junio */}
             <div>
               <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">
-                <span className="font-bold text-gray-800 dark:text-gray-200">Junio</span>
+                <span className="font-bold text-gray-800 dark:text-gray-200">
+                  Junio
+                </span>
                 <span>Ingresos: $9.5k | Egresos: $4.0k</span>
               </div>
               <div className="w-full bg-gray-100 dark:bg-gray-700/50 rounded-full h-3 overflow-hidden flex gap-1 p-0.5">
-                <div className="bg-[#6C7D38] h-full rounded-full transition-all duration-500" style={{ width: '72%' }}></div>
-                <div className="bg-[#D88A63] h-full rounded-full transition-all duration-500" style={{ width: '30%' }}></div>
+                <div
+                  className="bg-[#6C7D38] h-full rounded-full transition-all duration-500"
+                  style={{ width: "72%" }}
+                ></div>
+                <div
+                  className="bg-[#D88A63] h-full rounded-full transition-all duration-500"
+                  style={{ width: "30%" }}
+                ></div>
               </div>
             </div>
 
             {/* Julio */}
             <div>
               <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">
-                <span className="font-bold text-gray-800 dark:text-gray-200">Julio</span>
+                <span className="font-bold text-gray-800 dark:text-gray-200">
+                  Julio
+                </span>
                 <span>Ingresos: $11.0k | Egresos: $3.5k</span>
               </div>
               <div className="w-full bg-gray-100 dark:bg-gray-700/50 rounded-full h-3 overflow-hidden flex gap-1 p-0.5">
-                <div className="bg-[#6C7D38] h-full rounded-full transition-all duration-500" style={{ width: '80%' }}></div>
-                <div className="bg-[#D88A63] h-full rounded-full transition-all duration-500" style={{ width: '26%' }}></div>
+                <div
+                  className="bg-[#6C7D38] h-full rounded-full transition-all duration-500"
+                  style={{ width: "80%" }}
+                ></div>
+                <div
+                  className="bg-[#D88A63] h-full rounded-full transition-all duration-500"
+                  style={{ width: "26%" }}
+                ></div>
               </div>
             </div>
 
             {/* Agosto */}
             <div>
               <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">
-                <span className="font-bold text-gray-800 dark:text-gray-200">Agosto</span>
+                <span className="font-bold text-gray-800 dark:text-gray-200">
+                  Agosto
+                </span>
                 <span>Ingresos: $12.8k | Egresos: $4.9k</span>
               </div>
               <div className="w-full bg-gray-100 dark:bg-gray-700/50 rounded-full h-3 overflow-hidden flex gap-1 p-0.5">
-                <div className="bg-[#6C7D38] h-full rounded-full transition-all duration-500" style={{ width: '88%' }}></div>
-                <div className="bg-[#D88A63] h-full rounded-full transition-all duration-500" style={{ width: '35%' }}></div>
+                <div
+                  className="bg-[#6C7D38] h-full rounded-full transition-all duration-500"
+                  style={{ width: "88%" }}
+                ></div>
+                <div
+                  className="bg-[#D88A63] h-full rounded-full transition-all duration-500"
+                  style={{ width: "35%" }}
+                ></div>
               </div>
             </div>
           </div>
@@ -168,10 +196,12 @@ export default function FinancesPage() {
           </h2>
 
           <div className="flex flex-col sm:flex-row lg:flex-col items-center justify-center gap-6 my-auto py-2">
-            
             {/* Dona Dinámica en SVG */}
             <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <svg
+                className="w-full h-full transform -rotate-90"
+                viewBox="0 0 36 36"
+              >
                 {/* Fondo Base */}
                 <path
                   className="text-gray-100 dark:text-gray-700"
@@ -241,10 +271,8 @@ export default function FinancesPage() {
                 <span className="font-medium">Consultoría (5%)</span>
               </div>
             </div>
-
           </div>
         </div>
-
       </div>
 
       {/* Modal para Registrar Movimiento */}
@@ -264,7 +292,6 @@ export default function FinancesPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
