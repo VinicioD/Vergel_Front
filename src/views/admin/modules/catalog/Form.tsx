@@ -21,19 +21,16 @@ export const Form: React.FC<FormProps> = ({ onClose }) => {
   };
 
   return (
-    <div style={{
-      backgroundColor: '#FFF',
-      padding: '2rem',
-      borderRadius: '12px',
-      maxWidth: '450px',
-      width: '100%',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-    }}>
-      <h2 style={{ color: '#2A3319', marginTop: 0 }}>Agregar Nueva Planta</h2>
+    <div className="w-full max-w-[450px] p-6 sm:p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 transition-colors duration-300 mx-auto">
+      <h2 className="text-xl sm:text-2xl font-bold text-[#2A3319] dark:text-gray-100 mt-0 mb-6">
+        Agregar Nueva Planta
+      </h2>
       
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div>
-          <label style={{ fontSize: '0.85rem', color: '#444' }}>Nombre Común</label>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+            Nombre Común
+          </label>
           <Input 
             type="text" 
             value={formData.name}
@@ -41,8 +38,10 @@ export const Form: React.FC<FormProps> = ({ onClose }) => {
           />
         </div>
 
-        <div>
-          <label style={{ fontSize: '0.85rem', color: '#444' }}>Nombre Científico</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+            Nombre Científico
+          </label>
           <Input 
             type="text" 
             value={formData.scientificName}
@@ -50,8 +49,10 @@ export const Form: React.FC<FormProps> = ({ onClose }) => {
           />
         </div>
 
-        <div>
-          <label style={{ fontSize: '0.85rem', color: '#444' }}>Precio ($)</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+            Precio ($)
+          </label>
           <Input 
             type="text" 
             value={formData.price}
@@ -59,13 +60,22 @@ export const Form: React.FC<FormProps> = ({ onClose }) => {
           />
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem', marginTop: '1rem' }}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-4">
           {onClose && (
-            <Button type="button" onClick={onClose} style={{ backgroundColor: '#CCC', color: '#333' }}>
+            <Button 
+              type="button" 
+              onClick={onClose} 
+              style={{ backgroundColor: '#CCC', color: '#333' }}
+              className="w-full sm:w-auto"
+            >
               Cancelar
             </Button>
           )}
-          <Button type="submit" style={{ backgroundColor: '#586A27', color: '#FFF' }}>
+          <Button 
+            type="submit" 
+            style={{ backgroundColor: '#586A27', color: '#FFF' }}
+            className="w-full sm:w-auto"
+          >
             Guardar
           </Button>
         </div>
