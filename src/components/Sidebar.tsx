@@ -1,4 +1,3 @@
-// src/components/Sidebar.tsx
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -13,7 +12,7 @@ import LogoVergel from "../assets/Logo.png";
 export interface MenuItem {
   name: string;
   icon: LucideIcon;
-  path: string; // La ruta a la que apunta (ej: "/admin/dashboard")
+  path: string;
 }
 
 interface SidebarProps {
@@ -30,7 +29,14 @@ export default function Sidebar({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  // Detecta si estamos en el modulo admin o users para saber a qué perfil ir
+  const isAdmin = location.pathname.startsWith("/admin");
+  const profilePath = isAdmin ? "/admin/profile" : "/users/profile";
+  const isProfileActive = location.pathname.startsWith(profilePath);
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita que al dar clic en salir nos navegue al perfil
+    e.preventDefault();
     localStorage.removeItem("token");
     navigate("/login");
   };
@@ -86,7 +92,6 @@ export default function Sidebar({
         <nav className="flex-1 flex flex-col gap-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {items.map((item) => {
             const Icon = item.icon;
-            // Evaluamos si la URL actual coincide con el path del item
             const isActive = location.pathname.startsWith(item.path);
 
             return (
@@ -110,10 +115,14 @@ export default function Sidebar({
 
       {/* SECCIÓN INFERIOR: Perfil + Logout */}
       <div className="border-t border-white/10 pt-4 mt-2">
-        <div
-          className={`flex items-center gap-3 p-2 rounded-xl bg-white/5 ${
-            isCollapsed ? "justify-center" : "justify-between"
-          }`}
+        <NavLink
+          to={profilePath}
+          title={isCollapsed ? "Mi Perfil" : undefined}
+          className={`flex items-center gap-3 p-2 rounded-xl transition-all border ${
+            isProfileActive
+              ? "bg-white/20 border-white/30 text-white font-semibold shadow-sm"
+              : "bg-white/5 border-transparent hover:bg-white/10 text-white/90"
+          } ${isCollapsed ? "justify-center" : "justify-between"}`}
         >
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0 border border-white/30">
@@ -123,10 +132,10 @@ export default function Sidebar({
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold truncate text-white">
-                  Admin Vergel
+                  {isAdmin ? "Admin Vergel" : "Usuario Vergel"}
                 </span>
                 <span className="text-xs text-white/70 truncate">
-                  admin@vergel.com
+                  {isAdmin ? "admin@vergel.com" : "usuario@vergel.com"}
                 </span>
               </div>
             )}
@@ -141,7 +150,7 @@ export default function Sidebar({
               <LogOut size={18} />
             </button>
           )}
-        </div>
+        </NavLink>
       </div>
     </aside>
   );
