@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import Form, { type ClientData } from "./Form";
+import Button from "../../../../components/Button";
 
 interface Client extends ClientData {
   id: number;
@@ -127,14 +128,14 @@ export default function ClientsPage() {
         </div>
 
         {/* Botón Píldora corregido con tag nativo button */}
-        <button
-          type="button"
-          onClick={handleOpenAddModal}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#6C7D38] hover:bg-[#5b6a2f] text-white font-medium text-sm shadow-sm transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto"
-        >
-          <Plus size={18} strokeWidth={2.5} className="shrink-0" />
-          <span>Agregar Cliente</span>
-        </button>
+        <Button
+  type="button"
+  onClick={handleOpenAddModal}
+  icon={Plus}
+  className="rounded-full whitespace-nowrap self-start sm:self-auto"
+>
+  Agregar Cliente
+</Button>
       </div>
 
       {/* Buscador */}
