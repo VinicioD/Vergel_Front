@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import LogoVergel from "../assets/Logo.png";
 
-export interface MenuItem {
+export type MenuItem = {
   name: string;
   icon: LucideIcon;
   path: string;
