@@ -16,13 +16,13 @@ export default function Button({
   ...props
 }: ButtonProps) {
   // Definición de estilos por variante (Light + Dark Mode)
-  const variants = {
+const variants = {
     primary:
-      "bg-[#5b642a] hover:bg-[#4a5222] text-white shadow-sm dark:bg-[#5b642a] dark:hover:bg-[#6c7732]",
+      "bg-[#6C7D38] hover:bg-[#5b6a2f] dark:bg-[#8A9F48] dark:hover:bg-[#7A8D40] text-white shadow-sm focus:ring-[#6C7D38]",
     outline:
-      "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-900 dark:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 shadow-sm",
+      "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-900 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/60 shadow-sm focus:ring-zinc-400 dark:focus:ring-zinc-600",
     ghost:
-      "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200",
+      "bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 focus:ring-zinc-300 dark:focus:ring-zinc-700",
   };
 
   return (

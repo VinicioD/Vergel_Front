@@ -22,7 +22,7 @@ export default function AdminLayout() {
         items={fullAdminMenu}
       />
 
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-4 pt-16 md:p-6 md:pt-6 overflow-y-auto min-w-0 transition-all">
         <Outlet />
       </main>
     </div>
