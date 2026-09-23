@@ -10,12 +10,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import LogoVergel from "../assets/Logo.png";
+import LogoVergelDark from "../assets/LOGO-sin-fondo.png";
 
 export type MenuItem = {
   name: string;
   icon: LucideIcon;
   path: string;
-}
+};
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -46,7 +47,7 @@ export default function Sidebar({
   return (
     <>
       {/* BOTÓN HAMBURGUESA Y BARRA SUPERIOR (Solo visible en móviles - md:hidden) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#636B2F] dark:bg-zinc-900 border-b border-white/10 dark:border-zinc-800 z-40 px-4 flex items-center justify-between shadow-md">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#636B2F] border-b border-white/10 dark:bg-gray-900 dark:hover:bg-[#7A8D40] z-40 px-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
@@ -72,7 +73,7 @@ export default function Sidebar({
 
       {/* SIDEBAR PRINCIPAL */}
       <aside
-        className={`fixed md:sticky top-0 left-0 h-screen bg-[#636B2F] dark:bg-zinc-900 text-white dark:text-zinc-100 p-4 flex flex-col justify-between font-sans shadow-lg transition-all duration-300 z-50 shrink-0 ${
+        className={`fixed md:sticky top-0 left-0 h-screen bg-[#636B2F] dark:bg-gray-900 text-white dark:text-gray-100 p-4 flex flex-col justify-between font-sans shadow-lg transition-all duration-300 z-50 shrink-0 ${
           // Ancho y posicionamiento en Desktop vs Móvil
           isCollapsed ? "md:w-20" : "md:w-64"
         } w-64 ${
@@ -83,34 +84,52 @@ export default function Sidebar({
         {/* SECCIÓN SUPERIOR: Header + Navegación */}
         <div className="flex flex-col gap-4 flex-1 min-h-0">
           {/* Header / Logo + Botón dinámico */}
-          <div className="w-full border-b border-white/10 dark:border-zinc-800 pb-4 pt-1">
+          <div className="w-full border-b border-white/10 dark:border-gray-800 pb-4 pt-1">
             <div
               className={`flex items-center transition-all duration-300 ${
                 isCollapsed
                   ? "flex-col justify-center gap-3"
-                  : "relative justify-between md:justify-center"
+                  : "justify-between"
               }`}
             >
-              {/* Logo */}
-              <div
-                className={`flex items-center justify-center transition-all duration-300 ${
-                  isCollapsed ? "w-10 h-10" : "w-20 h-20 md:w-28 md:h-28"
-                }`}
-              >
-                <img
-                  src={LogoVergel}
-                  alt="Vergel Logo"
-                  className="w-full h-full object-contain"
-                />
+              {/* Contenedor del Logo + Nombre */}
+              <div className="flex items-center gap-3 overflow-hidden">
+                {/* Ícono/Logo pequeño */}
+                <div className="w-8 h-8 md:w-9 md:h-9 shrink-0 flex items-center justify-center">
+                  {/* Logo para Modo Claro */}
+                  <img
+                    src={LogoVergel}
+                    alt="Vergel Logo"
+                    className="w-full h-full object-contain dark:hidden"
+                  />
+                  {/* Logo para Modo Oscuro */}
+                  <img
+                    src={LogoVergelDark} // O vuelve a usar LogoVergel si es la misma imagen
+                    alt="Vergel Logo"
+                    className="w-full h-full object-contain hidden dark:block"
+                  />
+                </div>
+
+                {/* Nombre del Sistema (se oculta cuando la barra está colapsada) */}
+                <div
+                  className={`flex flex-col min-w-0 ${
+                    isCollapsed ? "md:hidden" : "flex"
+                  }`}
+                >
+                  <span className="font-bold text-base md:text-lg text-white dark:text-gray-100 leading-tight truncate">
+                    Sistema Vergel
+                  </span>
+                  <span className="text-[10px] text-white/70 dark:text-gray-400 font-medium tracking-wider uppercase truncate">
+                    {isAdmin ? "Panel Admin" : "Gestión"}
+                  </span>
+                </div>
               </div>
 
               {/* Botón de cerrar en móvil / colapsar en Desktop */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className={`hidden md:block p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 dark:hover:bg-zinc-800 transition-colors ${
-                    isCollapsed ? "static" : "absolute right-0 top-0"
-                  }`}
+                  className="hidden md:block p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 dark:hover:bg-gray-800 transition-colors"
                   title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
                 >
                   {isCollapsed ? (
@@ -145,8 +164,8 @@ export default function Sidebar({
                   title={isCollapsed ? item.name : undefined}
                   className={`flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all text-left text-sm ${
                     isActive
-                      ? "bg-white/20 dark:bg-zinc-800 text-white font-semibold shadow-sm"
-                      : "text-white/90 dark:text-zinc-300 hover:bg-white/10 dark:hover:bg-zinc-800/60 hover:text-white"
+                      ? "bg-white/20 dark:bg-gray-800 text-white font-semibold shadow-sm"
+                      : "text-white/90 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-800/60 hover:text-white"
                   } ${isCollapsed ? "md:justify-center" : ""}`}
                 >
                   <Icon className="w-5 h-5 shrink-0" />
@@ -164,19 +183,22 @@ export default function Sidebar({
         </div>
 
         {/* SECCIÓN INFERIOR: Perfil + Logout */}
-        <div className="border-t border-white/10 dark:border-zinc-800 pt-4 mt-2">
+        <div className="border-t border-white/10 dark:border-gray-800 pt-4 mt-2">
           <NavLink
             to={profilePath}
             onClick={() => setIsMobileOpen(false)}
             title={isCollapsed ? "Mi Perfil" : undefined}
             className={`flex items-center gap-3 p-2 rounded-xl transition-all border ${
               isProfileActive
-                ? "bg-white/20 dark:bg-zinc-800 border-white/30 dark:border-zinc-700 text-white font-semibold shadow-sm"
-                : "bg-white/5 dark:bg-zinc-800/40 border-transparent hover:bg-white/10 dark:hover:bg-zinc-800 text-white/90 dark:text-zinc-300"
+                ? "bg-white/20 dark:bg-gray-800 border-white/30 dark:border-gray-700 text-white font-semibold shadow-sm"
+                : "bg-white/5 dark:bg-gray-800/40 border-transparent hover:bg-white/10 dark:hover:bg-gray-800 text-white/90 dark:text-gray-300"
             } ${isCollapsed ? "md:justify-center" : "justify-between"}`}
           >
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-9 h-9 rounded-full bg-white/20 dark:bg-zinc-700 flex items-center justify-center shrink-0 border border-white/30 dark:border-zinc-600">
+            {/* Contenedor del ícono y texto (se eliminó el overflow-hidden de aquí) */}
+            <div
+              className={`flex items-center gap-3 ${isCollapsed ? "md:justify-center" : "min-w-0 flex-1"}`}
+            >
+              <div className="w-9 h-9 rounded-full bg-white/20 dark:bg-gray-700 flex items-center justify-center shrink-0 border border-white/30 dark:border-gray-600">
                 <User className="w-5 h-5 text-white" />
               </div>
 
@@ -185,10 +207,10 @@ export default function Sidebar({
                   isCollapsed ? "md:hidden" : "flex"
                 }`}
               >
-                <span className="text-sm font-semibold truncate text-white dark:text-zinc-100">
+                <span className="text-sm font-semibold truncate text-white dark:text-gray-100">
                   {isAdmin ? "Admin Vergel" : "Usuario Vergel"}
                 </span>
-                <span className="text-xs text-white/70 dark:text-zinc-400 truncate">
+                <span className="text-xs text-white/70 dark:text-gray-400 truncate">
                   {isAdmin ? "admin@vergel.com" : "usuario@vergel.com"}
                 </span>
               </div>
@@ -196,7 +218,7 @@ export default function Sidebar({
 
             <button
               onClick={handleLogout}
-              className={`p-1.5 text-white/70 dark:text-zinc-400 hover:text-white dark:hover:text-zinc-100 hover:bg-white/10 dark:hover:bg-zinc-700 rounded-lg transition-colors shrink-0 ${
+              className={`p-1.5 text-white/70 dark:text-gray-400 hover:text-white dark:hover:text-gray-100 hover:bg-white/10 dark:hover:bg-gray-700 rounded-lg transition-colors shrink-0 ${
                 isCollapsed ? "md:hidden" : "block"
               }`}
               title="Cerrar sesión"
