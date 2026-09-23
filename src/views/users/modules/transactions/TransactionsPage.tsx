@@ -1,4 +1,4 @@
-// src/views/admin/modules/transactions/TransactionsPage.tsx
+// src/views/users/modules/transactions/TransactionsPage.tsx
 import TransactionsView from "../../../../components/TransactionsView";
 
 export default function TransactionsPage() {

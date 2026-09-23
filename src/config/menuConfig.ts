@@ -37,4 +37,5 @@ export const userMenu = [
   { name: "Billetera", icon: Wallet, path: "/users/wallet" },
   { name: "Tarifas", icon: DollarSign, path: "/users/rates" },
   { name: "Catálogo", icon: BookOpen, path: "/users/catalog" },
+  { name: "Movimientos", icon: ArrowRightLeft, path: "/users/transactions" },
 ];
