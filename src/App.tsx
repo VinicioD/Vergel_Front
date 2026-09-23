@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./views/auth/login";
 import AdminRoutes from "./views/admin/AdminRoutes";
-import UserRoutes from "./views/users/UserRoutes";
+import UserRoutes from "./views/recepcionist/UserRoutes";
 
 export default function App() {
   return (

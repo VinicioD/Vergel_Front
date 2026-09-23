@@ -13,7 +13,6 @@ import ProfilePage from "./modules/profile/ProfilePage";
 import QuotesPage from "./modules/quotes/QuotesPage";
 import RatesPage from "./modules/rates/RatesPage";
 import SchedulePage from "./modules/schedule/SchedulePage";
-import TransactionsPage from "./modules/transactions/TransactionsPage";
 import WalletPage from "./modules/wallet/WalletPage";
 
 export default function UserRoutes() {
@@ -27,7 +26,6 @@ export default function UserRoutes() {
         <Route path="quotes" element={<QuotesPage />} />
         <Route path="rates" element={<RatesPage />} />
         <Route path="schedule" element={<SchedulePage />} />
-        <Route path="transactions" element={<TransactionsPage />} />
         <Route path="wallet" element={<WalletPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
