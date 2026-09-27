@@ -1,5 +1,5 @@
-// src/views/admin/modules/profile/Form.tsx
-import React, { useState, useEffect } from 'react';
+// src/views/admin/modules/settings/Form.tsx
+import React, { useState } from 'react';
 import { Upload, Sun, Moon, Check } from 'lucide-react';
 import Input from '../../../../components/Input';
 import Button from '../../../../components/Button';
@@ -67,14 +67,11 @@ export const Form: React.FC = () => {
     email: 'contacto@verdecito.pe',
   });
 
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // Inicializador perezoso: lee la clase 'dark' del <html> al montar, sin useEffect.
+  const [isDarkMode, setIsDarkMode] = useState(
+    () => document.documentElement.classList.contains('dark'),
+  );
   const [isSaved, setIsSaved] = useState(false);
-
-  // Detectar y sincronizar con la clase 'dark' en el <html>
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-  }, []);
 
   const toggleTheme = (mode: 'light' | 'dark') => {
     if (mode === 'dark') {

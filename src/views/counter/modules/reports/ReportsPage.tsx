@@ -1,4 +1,4 @@
-// src/views/admin/modules/reports/ReportsPage.tsx
+// src/views/counter/modules/reports/ReportsPage.tsx
 import ReportsView from "../../../../components/reports/ReportsView";
 
 export default function ReportsPage() {

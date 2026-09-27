@@ -1,17 +1,17 @@
-// src/views/auditor/AuditorLayout.tsx
+// src/views/quote/QuoteLayout.tsx
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
-import { auditorMenu } from "../../config/menuConfig";
+import { quoteMenu } from "../../config/menuConfig";
 import { LayoutDashboard } from "lucide-react";
 
-export default function AuditorLayout() {
+export default function QuoteLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Unimos el Dashboard con las opciones que definiste en menuConfig
-  const fullAuditorMenu = [
-    { name: "Inicio", icon: LayoutDashboard, path: "/auditor/dashboard" },
-    ...auditorMenu,
+  const fullQuoteMenu = [
+    { name: "Inicio", icon: LayoutDashboard, path: "/quote/dashboard" },
+    ...quoteMenu,
   ];
 
   return (
@@ -19,7 +19,7 @@ export default function AuditorLayout() {
       <Sidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
-        items={fullAuditorMenu}
+        items={fullQuoteMenu}
       />
 
       <main className="flex-1 p-4 pt-16 md:p-6 md:pt-6 overflow-y-auto min-w-0 transition-all">

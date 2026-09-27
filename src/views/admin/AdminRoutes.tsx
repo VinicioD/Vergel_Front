@@ -1,5 +1,4 @@
 // src/views/admin/AdminRoutes.tsx
-import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
 
@@ -17,6 +16,7 @@ import QuotesPage from "./modules/quotes/QuotesPage";
 import RatesPage from "./modules/rates/RatesPage";
 import ReportsPage from "./modules/reports/ReportsPage";
 import SchedulePage from "./modules/schedule/SchedulePage";
+import SettingsPage from "./modules/settings/SettingsPage";
 import TransactionsPage from "./modules/transactions/TransactionsPage";
 import WalletPage from "./modules/wallet/WalletPage";
 import ProfilePage from "./modules/profile/ProfilePage";
@@ -41,6 +41,7 @@ export default function AdminRoutes() {
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="collaborators" element={<CollaboratorsPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="users" element={<UsersPage />} />
       </Route>
 

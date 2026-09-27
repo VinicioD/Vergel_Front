@@ -1,17 +1,17 @@
-// src/views/users/UserLayout.tsx
+// src/views/recepcionist/UserLayout.tsx
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
-import { userMenu } from "../../config/menuConfig";
+import { recepcionistMenu } from "../../config/menuConfig";
 import { LayoutDashboard } from "lucide-react";
 
 export default function UserLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Unimos el Dashboard del usuario con sus opciones de menuConfig
-  const fullUserMenu = [
-    { name: "Inicio", icon: LayoutDashboard, path: "/users/dashboard" },
-    ...userMenu,
+  // Unimos el Dashboard del recepcionista con sus opciones de menuConfig
+  const fullRecepcionistMenu = [
+    { name: "Inicio", icon: LayoutDashboard, path: "/recepcionist/dashboard" },
+    ...recepcionistMenu,
   ];
 
   return (
@@ -19,7 +19,7 @@ export default function UserLayout() {
       <Sidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
-        items={fullUserMenu}
+        items={fullRecepcionistMenu}
       />
 
       <main className="flex-1 p-4 pt-16 md:p-6 md:pt-6 overflow-y-auto min-w-0 transition-all">

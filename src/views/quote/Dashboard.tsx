@@ -1,44 +1,49 @@
-// src/views/auditor/Dashboard.tsx
+// src/views/quote/Dashboard.tsx
 import KpiCard from "../../components/KpiCard";
-import { History, ArrowRightLeft } from "lucide-react";
+import { FileText, Users, BookOpen } from "lucide-react";
 
 const KPIS = [
   {
-    title: "Movimientos del mes",
-    value: "128",
-    badgeText: "+12",
+    title: "Cotizaciones del mes",
+    value: "24",
+    badgeText: "+6",
     badgeType: "positive" as const,
   },
   {
-    title: "Ingresos auditados",
-    value: "$48,320.00",
-    badgeText: "100% revisado",
+    title: "Monto cotizado",
+    value: "$38,640.00",
+    badgeText: "Este mes",
+    badgeType: "neutral" as const,
+  },
+  {
+    title: "Tasa de aprobación",
+    value: "68%",
+    badgeText: "+5.2%",
     badgeType: "positive" as const,
   },
   {
-    title: "Por revisar",
-    value: "7",
-    badgeText: "Requieren atención",
+    title: "Pendientes",
+    value: "5",
+    badgeText: "Sin responder",
     badgeType: "warning" as const,
-  },
-  {
-    title: "Discrepancias",
-    value: "2",
-    badgeText: "Sin resolver",
-    badgeType: "negative" as const,
   },
 ];
 
 const SHORTCUTS = [
   {
-    title: "Historial",
-    description: "Ingresos y egresos registrados en el sistema",
-    icon: History,
+    title: "Cotizaciones",
+    description: "Genera y da seguimiento a tus presupuestos",
+    icon: FileText,
   },
   {
-    title: "Movimientos",
-    description: "Trazabilidad de las acciones por usuario",
-    icon: ArrowRightLeft,
+    title: "Clientes",
+    description: "Directorio de clientes residenciales y corporativos",
+    icon: Users,
+  },
+  {
+    title: "Catálogo",
+    description: "Consulta precios y stock de productos",
+    icon: BookOpen,
   },
 ];
 
@@ -49,10 +54,10 @@ export default function Dashboard() {
       <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-            Resumen de Auditoría
+            Mi Día
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Revisa los movimientos registrados y detecta discrepancias
+            Resumen de tus cotizaciones y clientes
           </p>
         </div>
       </div>
@@ -71,7 +76,7 @@ export default function Dashboard() {
       </div>
 
       {/* ACCESOS RÁPIDOS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {SHORTCUTS.map((shortcut) => {
           const Icon = shortcut.icon;
           return (
@@ -82,7 +87,7 @@ export default function Dashboard() {
               <div className="w-11 h-11 rounded-2xl bg-[#636B2F] text-white flex items-center justify-center shrink-0">
                 <Icon size={20} />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <span className="font-bold text-gray-900 dark:text-gray-100">
                   {shortcut.title}
                 </span>

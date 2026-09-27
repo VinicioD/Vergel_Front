@@ -1,7 +1,7 @@
-// src/views/admin/modules/clients/Form.tsx
+// src/components/clients/Form.tsx
 import React, { useState, useEffect } from 'react';
-import Input from '../../../../components/Input';
-import Button from '../../../../components/Button';
+import Input from '../Input';
+import Button from '../Button';
 
 export interface ClientData {
   id?: number;
@@ -55,15 +55,15 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
       <h2 className="text-xl sm:text-2xl font-bold text-[#2A3319] dark:text-gray-100 mt-0 mb-6">
         {initialData ? 'Editar Cliente' : 'Agregar Nuevo Cliente'}
       </h2>
-      
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Nombre del Cliente */}
         <div className="flex flex-col gap-1">
           <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
             Nombre / Empresa *
           </label>
-          <Input 
-            type="text" 
+          <Input
+            type="text"
             required
             placeholder="Ej. Condominio Los Olivos"
             value={formData.name}
@@ -91,8 +91,8 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
             <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
               Teléfono *
             </label>
-            <Input 
-              type="text" 
+            <Input
+              type="text"
               required
               placeholder="+51 987 654 321"
               value={formData.phone}
@@ -106,8 +106,8 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
           <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
             Correo Electrónico *
           </label>
-          <Input 
-            type="email" 
+          <Input
+            type="email"
             required
             placeholder="contacto@empresa.com"
             value={formData.email}
@@ -120,8 +120,8 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
           <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
             Dirección / Ubicación
           </label>
-          <Input 
-            type="text" 
+          <Input
+            type="text"
             placeholder="Ej. Av. Primavera 123, Surco"
             value={formData.address}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, address: e.target.value})}
@@ -135,10 +135,10 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
           </label>
           <div className="flex items-center gap-4 mt-1">
             <label className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-              <input 
-                type="radio" 
+              <input
+                type="radio"
                 name="clientStatus"
-                value="Activo" 
+                value="Activo"
                 checked={formData.status === 'Activo'}
                 onChange={() => setFormData({...formData, status: 'Activo'})}
                 className="accent-[#6C7D38]"
@@ -146,10 +146,10 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
               Activo
             </label>
             <label className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-              <input 
-                type="radio" 
+              <input
+                type="radio"
                 name="clientStatus"
-                value="Inactivo" 
+                value="Inactivo"
                 checked={formData.status === 'Inactivo'}
                 onChange={() => setFormData({...formData, status: 'Inactivo'})}
                 className="accent-[#6C7D38]"
@@ -162,17 +162,17 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
         {/* Botones de Acción */}
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/60">
           {onClose && (
-            <Button 
-              type="button" 
-              onClick={onClose} 
+            <Button
+              type="button"
+              onClick={onClose}
               style={{ backgroundColor: '#CCC', color: '#333' }}
               className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
           )}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             style={{ backgroundColor: '#6C7D38', color: '#FFF' }}
             className="w-full sm:w-auto"
           >

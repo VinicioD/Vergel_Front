@@ -1,44 +1,49 @@
-// src/views/auditor/Dashboard.tsx
+// src/views/counter/Dashboard.tsx
 import KpiCard from "../../components/KpiCard";
-import { History, ArrowRightLeft } from "lucide-react";
+import { History, TrendingUp, AlertCircle } from "lucide-react";
 
 const KPIS = [
   {
-    title: "Movimientos del mes",
-    value: "128",
-    badgeText: "+12",
+    title: "Ingresos del mes",
+    value: "$12,850.00",
+    badgeText: "+15.2%",
     badgeType: "positive" as const,
   },
   {
-    title: "Ingresos auditados",
-    value: "$48,320.00",
-    badgeText: "100% revisado",
-    badgeType: "positive" as const,
+    title: "Egresos del mes",
+    value: "$4,920.00",
+    badgeText: "-2.4%",
+    badgeType: "negative" as const,
   },
   {
-    title: "Por revisar",
-    value: "7",
-    badgeText: "Requieren atención",
+    title: "Cuentas por cobrar",
+    value: "$3,450.00",
+    badgeText: "$1.2k vencido",
     badgeType: "warning" as const,
   },
   {
-    title: "Discrepancias",
-    value: "2",
-    badgeText: "Sin resolver",
-    badgeType: "negative" as const,
+    title: "Cotizaciones emitidas",
+    value: "73",
+    badgeText: "En lo que va del año",
+    badgeType: "positive" as const,
   },
 ];
 
 const SHORTCUTS = [
   {
+    title: "Finanzas",
+    description: "Ingresos, egresos y rentabilidad en tiempo real",
+    icon: TrendingUp,
+  },
+  {
+    title: "Reportes",
+    description: "Informes contables/fiscales y resumen anual",
+    icon: AlertCircle,
+  },
+  {
     title: "Historial",
     description: "Ingresos y egresos registrados en el sistema",
     icon: History,
-  },
-  {
-    title: "Movimientos",
-    description: "Trazabilidad de las acciones por usuario",
-    icon: ArrowRightLeft,
   },
 ];
 
@@ -49,10 +54,10 @@ export default function Dashboard() {
       <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-            Resumen de Auditoría
+            Resumen de Contabilidad
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Revisa los movimientos registrados y detecta discrepancias
+            Controla los cobros, los egresos y la rentabilidad del negocio
           </p>
         </div>
       </div>
@@ -71,7 +76,7 @@ export default function Dashboard() {
       </div>
 
       {/* ACCESOS RÁPIDOS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {SHORTCUTS.map((shortcut) => {
           const Icon = shortcut.icon;
           return (
