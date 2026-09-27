@@ -1,7 +1,7 @@
-// src/views/admin/modules/finances/Form.tsx
+// src/components/finances/Form.tsx
 import React, { useState, useEffect } from 'react';
-import Input from '../../../../components/Input';
-import Button from '../../../../components/Button';
+import Input from '../Input';
+import Button from '../Button';
 
 export interface FinanceTransactionData {
   id?: number;

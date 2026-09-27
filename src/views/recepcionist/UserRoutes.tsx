@@ -1,5 +1,4 @@
-// src/views/users/UserRoutes.tsx
-import React from "react";
+// src/views/recepcionist/UserRoutes.tsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import UserLayout from "./UserLayout";
 
@@ -30,7 +29,7 @@ export default function UserRoutes() {
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
-      {/* Redirección por defecto si la URL no existe o si entran solo a /users */}
+      {/* Redirección por defecto si la URL no existe o si entran solo a /recepcionist */}
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Routes>
   );

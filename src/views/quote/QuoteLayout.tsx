@@ -1,17 +1,17 @@
-// src/views/users/UserLayout.tsx
-import React, { useState } from "react";
+// src/views/quote/QuoteLayout.tsx
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
-import { userMenu } from "../../config/menuConfig";
+import { quoteMenu } from "../../config/menuConfig";
 import { LayoutDashboard } from "lucide-react";
 
-export default function UserLayout() {
+export default function QuoteLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Unimos el Dashboard del usuario con sus opciones de menuConfig
-  const fullUserMenu = [
-    { name: "Inicio", icon: LayoutDashboard, path: "/users/dashboard" },
-    ...userMenu,
+  // Unimos el Dashboard con las opciones que definiste en menuConfig
+  const fullQuoteMenu = [
+    { name: "Inicio", icon: LayoutDashboard, path: "/quote/dashboard" },
+    ...quoteMenu,
   ];
 
   return (
@@ -19,7 +19,7 @@ export default function UserLayout() {
       <Sidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
-        items={fullUserMenu}
+        items={fullQuoteMenu}
       />
 
       <main className="flex-1 p-4 pt-16 md:p-6 md:pt-6 overflow-y-auto min-w-0 transition-all">

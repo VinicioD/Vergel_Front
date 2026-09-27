@@ -18,6 +18,76 @@ export type MenuItem = {
   path: string;
 };
 
+type RoleConfig = {
+  /** Prefijo de ruta que identifica al rol, ej. "/admin" */
+  prefix: string;
+  panelTitle: string;
+  panelSubtitle: string;
+  displayName: string;
+  email: string;
+  /** Ruta de perfil. Omitirla si el rol no tiene vista de perfil. */
+  profilePath?: string;
+};
+
+const ROLES: RoleConfig[] = [
+  {
+    prefix: "/admin",
+    panelTitle: "Admin Panel",
+    panelSubtitle: "Panel Admin",
+    displayName: "Admin Vergel",
+    email: "admin@vergel.com",
+    profilePath: "/admin/profile",
+  },
+  {
+    prefix: "/recepcionist",
+    panelTitle: "Mi Cuenta",
+    panelSubtitle: "Gestión",
+    displayName: "Usuario Vergel",
+    email: "usuario@vergel.com",
+    profilePath: "/recepcionist/profile",
+  },
+  {
+    prefix: "/technical",
+    panelTitle: "Panel Técnico",
+    panelSubtitle: "Servicio de campo",
+    displayName: "Técnico Vergel",
+    email: "tecnico@vergel.com",
+    profilePath: "/technical/profile",
+  },
+  {
+    prefix: "/auditor",
+    panelTitle: "Panel Auditor",
+    panelSubtitle: "Control y trazabilidad",
+    displayName: "Auditor Vergel",
+    email: "auditor@vergel.com",
+    profilePath: "/auditor/profile",
+  },
+  {
+    prefix: "/quote",
+    panelTitle: "Panel Cotizaciones",
+    panelSubtitle: "Ventas y presupuestos",
+    displayName: "Cotizador Vergel",
+    email: "cotizador@vergel.com",
+    profilePath: "/quote/profile",
+  },
+  {
+    prefix: "/counter",
+    panelTitle: "Panel Contabilidad",
+    panelSubtitle: "Finanzas y reportes",
+    displayName: "Contador Vergel",
+    email: "contador@vergel.com",
+    profilePath: "/counter/profile",
+  },
+];
+
+const FALLBACK_ROLE: RoleConfig = {
+  prefix: "/",
+  panelTitle: "Sistema Vergel",
+  panelSubtitle: "Panel",
+  displayName: "Usuario Vergel",
+  email: "usuario@vergel.com",
+};
+
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (value: boolean) => void;
@@ -33,9 +103,13 @@ export default function Sidebar({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isAdmin = location.pathname.startsWith("/admin");
-  const profilePath = isAdmin ? "/admin/profile" : "/users/profile";
-  const isProfileActive = location.pathname.startsWith(profilePath);
+  const activeRole =
+    ROLES.find((role) => location.pathname.startsWith(role.prefix)) ??
+    FALLBACK_ROLE;
+  const profilePath = activeRole.profilePath;
+  const isProfileActive = profilePath
+    ? location.pathname.startsWith(profilePath)
+    : false;
 
   const handleLogout = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,6 +117,31 @@ export default function Sidebar({
     localStorage.removeItem("token");
     navigate("/login");
   };
+
+  // Avatar + nombre/correo del rol activo. Se muestra dentro de un NavLink
+  // cuando el rol tiene vista de perfil, y como bloque plano cuando no.
+  const identityBlock = (
+    <span
+      className={`flex items-center gap-3 ${isCollapsed ? "md:justify-center" : "min-w-0 flex-1"}`}
+    >
+      <span className="w-9 h-9 rounded-full bg-white/20 dark:bg-gray-700 flex items-center justify-center shrink-0 border border-white/30 dark:border-gray-600">
+        <User className="w-5 h-5 text-white" />
+      </span>
+
+      <span
+        className={`flex flex-col min-w-0 ${
+          isCollapsed ? "md:hidden" : "flex"
+        }`}
+      >
+        <span className="text-sm font-semibold truncate text-white dark:text-gray-100">
+          {activeRole.displayName}
+        </span>
+        <span className="text-xs text-white/70 dark:text-gray-400 truncate">
+          {activeRole.email}
+        </span>
+      </span>
+    </span>
+  );
 
   return (
     <>
@@ -59,7 +158,7 @@ export default function Sidebar({
           <img src={LogoVergel} alt="Logo" className="w-8 h-8 object-contain" />
         </div>
         <span className="text-white font-semibold text-sm">
-          {isAdmin ? "Admin Panel" : "Mi Cuenta"}
+          {activeRole.panelTitle}
         </span>
       </div>
 
@@ -120,7 +219,7 @@ export default function Sidebar({
                     Sistema Vergel
                   </span>
                   <span className="text-[10px] text-white/70 dark:text-gray-400 font-medium tracking-wider uppercase truncate">
-                    {isAdmin ? "Panel Admin" : "Gestión"}
+                    {activeRole.panelSubtitle}
                   </span>
                 </div>
               </div>
@@ -182,39 +281,30 @@ export default function Sidebar({
           </nav>
         </div>
 
-        {/* SECCIÓN INFERIOR: Perfil + Logout */}
+        {/* SECCIÓN INFERIOR: Identidad + Logout (mismo estilo para todos los roles) */}
         <div className="border-t border-white/10 dark:border-gray-800 pt-4 mt-2">
-          <NavLink
-            to={profilePath}
-            onClick={() => setIsMobileOpen(false)}
-            title={isCollapsed ? "Mi Perfil" : undefined}
-            className={`flex items-center gap-3 p-2 rounded-xl transition-all border ${
-              isProfileActive
-                ? "bg-white/20 dark:bg-gray-800 border-white/30 dark:border-gray-700 text-white font-semibold shadow-sm"
-                : "bg-white/5 dark:bg-gray-800/40 border-transparent hover:bg-white/10 dark:hover:bg-gray-800 text-white/90 dark:text-gray-300"
-            } ${isCollapsed ? "md:justify-center" : "justify-between"}`}
+          <div
+            className={`flex items-center gap-3 p-2 rounded-xl border transition-all bg-white/5 dark:bg-gray-800/40 border-transparent ${
+              isCollapsed ? "md:justify-center" : "justify-between"
+            }`}
           >
-            {/* Contenedor del ícono y texto (se eliminó el overflow-hidden de aquí) */}
-            <div
-              className={`flex items-center gap-3 ${isCollapsed ? "md:justify-center" : "min-w-0 flex-1"}`}
-            >
-              <div className="w-9 h-9 rounded-full bg-white/20 dark:bg-gray-700 flex items-center justify-center shrink-0 border border-white/30 dark:border-gray-600">
-                <User className="w-5 h-5 text-white" />
-              </div>
-
-              <div
-                className={`flex flex-col min-w-0 ${
-                  isCollapsed ? "md:hidden" : "flex"
-                }`}
+            {/* La identidad es enlace solo si el rol tiene vista de perfil. */}
+            {profilePath ? (
+              <NavLink
+                to={profilePath}
+                onClick={() => setIsMobileOpen(false)}
+                title={isCollapsed ? "Mi Perfil" : undefined}
+                className={`flex items-center gap-3 rounded-lg transition-colors ${
+                  isProfileActive
+                    ? "text-white font-semibold"
+                    : "text-white/90 dark:text-gray-300 hover:text-white"
+                } ${isCollapsed ? "md:justify-center" : "min-w-0 flex-1"}`}
               >
-                <span className="text-sm font-semibold truncate text-white dark:text-gray-100">
-                  {isAdmin ? "Admin Vergel" : "Usuario Vergel"}
-                </span>
-                <span className="text-xs text-white/70 dark:text-gray-400 truncate">
-                  {isAdmin ? "admin@vergel.com" : "usuario@vergel.com"}
-                </span>
-              </div>
-            </div>
+                {identityBlock}
+              </NavLink>
+            ) : (
+              identityBlock
+            )}
 
             <button
               onClick={handleLogout}
@@ -225,7 +315,7 @@ export default function Sidebar({
             >
               <LogOut size={18} />
             </button>
-          </NavLink>
+          </div>
         </div>
       </aside>
     </>
