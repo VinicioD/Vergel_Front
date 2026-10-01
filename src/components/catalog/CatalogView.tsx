@@ -17,6 +17,7 @@ export interface CatalogViewProps {
   title?: string;
   subtitle?: string;
   searchPlaceholder?: string;
+  showAddProductButton?: boolean;
 }
 
 // Datos de ejemplo para el catálogo
@@ -71,6 +72,7 @@ export default function CatalogView({
   title = "Catálogo de Productos",
   subtitle = "Administra e inspecciona todos los productos de tu inventario",
   searchPlaceholder = "Buscar producto...",
+  showAddProductButton = true,
 }: CatalogViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -97,10 +99,12 @@ export default function CatalogView({
           </p>
         </div>
 
-        <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#5d682e] hover:bg-[#4d5626] text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-md transition-all cursor-pointer">
-          <Plus size={18} />
-          <span>Nuevo Producto</span>
-        </button>
+        {showAddProductButton && (
+          <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#5d682e] hover:bg-[#4d5626] text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-md transition-all cursor-pointer">
+            <Plus size={18} />
+            <span>Nuevo Producto</span>
+          </button>
+        )}
       </div>
 
       {/* Barra de Filtros y Búsqueda Responsive */}

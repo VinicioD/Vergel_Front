@@ -204,14 +204,16 @@ export default function QuotesView({
             Descargar PDF
           </Button>
 
-          <Button
-            variant="primary"
-            icon={Plus}
-            onClick={onNewQuote}
-            className="w-full sm:w-auto justify-center"
-          >
-            Nueva Cotización
-          </Button>
+          {onNewQuote && (
+            <Button
+              variant="primary"
+              icon={Plus}
+              onClick={onNewQuote}
+              className="w-full sm:w-auto justify-center"
+            >
+              Nueva Cotización
+            </Button>
+          )}
         </div>
       </div>
 

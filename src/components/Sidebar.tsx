@@ -146,7 +146,7 @@ export default function Sidebar({
   return (
     <>
       {/* BOTÓN HAMBURGUESA Y BARRA SUPERIOR (Solo visible en móviles - md:hidden) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#636B2F] border-b border-white/10 dark:bg-gray-900 dark:hover:bg-[#7A8D40] z-40 px-4 flex items-center justify-between shadow-md">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#636B2F] border-b border-white/10 dark:bg-gray-900 z-40 px-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
@@ -155,7 +155,16 @@ export default function Sidebar({
           >
             {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
-          <img src={LogoVergel} alt="Logo" className="w-8 h-8 object-contain" />
+          <img
+            src={LogoVergel}
+            alt="Vergel Logo"
+            className="w-8 h-8 object-contain dark:hidden"
+          />
+          <img
+            src={LogoVergelDark}
+            alt="Vergel Logo"
+            className="w-8 h-8 object-contain hidden dark:block"
+          />
         </div>
         <span className="text-white font-semibold text-sm">
           {activeRole.panelTitle}
