@@ -1,5 +1,5 @@
-import React from "react";
+import DailyAgenda from "../../../../components/DailyAgenda";
 
 export default function SchedulePage() {
-  return <p>vista agenda</p>;
+  return <DailyAgenda />;
 }
