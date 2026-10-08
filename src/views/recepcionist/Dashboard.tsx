@@ -1,5 +1,5 @@
-import React from "react";
+import DailyAgenda from "../../components/DailyAgenda";
 
-export default function DashboardPage() {
-  return <p>vista dashboard</p>;
+export default function Dashboard() {
+  return <DailyAgenda />;
 }
