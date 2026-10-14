@@ -60,20 +60,6 @@ export default function Login() {
         isDarkMode ? "bg-gray-900" : "bg-[#E3E3E3]"
       }`}
     >
-      {/* Botón Flotante para cambiar Modo Oscuro / Claro */}
-      <button
-        onClick={toggleDarkMode}
-        type="button"
-        className="fixed top-4 right-4 z-50 p-2.5 rounded-full bg-white/80 dark:bg-gray-800/80 shadow-md backdrop-blur-sm text-gray-800 dark:text-gray-200 hover:scale-105 transition-all"
-        title="Cambiar Modo"
-      >
-        {isDarkMode ? (
-          <Sun size={20} className="text-amber-400" />
-        ) : (
-          <Moon size={20} className="text-gray-700" />
-        )}
-      </button>
-
       {/* Columna Izquierda: Imagen de Fondo */}
       <div className="hidden md:block md:w-1/2 lg:w-7/12 h-64 md:h-screen relative overflow-hidden">
         <img
