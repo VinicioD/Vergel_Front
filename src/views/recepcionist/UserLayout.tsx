@@ -1,5 +1,5 @@
 // src/views/recepcionist/UserLayout.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import { recepcionistMenu } from "../../config/menuConfig";

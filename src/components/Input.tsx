@@ -1,5 +1,5 @@
 // src/components/Input.tsx
-import React, { type InputHTMLAttributes } from "react";
+import { type InputHTMLAttributes } from "react";
 import type { LucideIcon } from "lucide-react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {

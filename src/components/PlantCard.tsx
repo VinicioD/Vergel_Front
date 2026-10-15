@@ -1,5 +1,4 @@
 // src/components/PlantCard.tsx
-import React from "react";
 
 export interface Plant {
   id: string;

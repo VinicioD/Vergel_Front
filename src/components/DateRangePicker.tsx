@@ -1,5 +1,5 @@
 // src/components/DateRangePicker.tsx
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Calendar, ChevronDown } from "lucide-react";
 
 export interface DateOption {

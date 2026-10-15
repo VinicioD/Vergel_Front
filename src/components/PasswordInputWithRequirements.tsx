@@ -1,7 +1,7 @@
 // src/components/PasswordInputWithRequirements.tsx
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 
 interface PasswordInputProps {

@@ -1,5 +1,4 @@
 // src/components/CategoryFilter.tsx
-import React from "react";
 
 export interface CategoryOption {
   label: string;

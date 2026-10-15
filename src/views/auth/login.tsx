@@ -1,7 +1,7 @@
 // src/views/auth/login.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Sun, Moon, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 import logoImg from "../../assets/logo.png";
 import fondoLight from "../../assets/Fondo_light.jpeg";
 import { login } from "../../services/authService";
