@@ -1,5 +1,3 @@
-import React from "react";
-
 export interface KpiCardProps {
   title: string;
   value: string;

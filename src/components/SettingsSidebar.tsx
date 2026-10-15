@@ -1,5 +1,4 @@
 // src/components/SettingsSidebar.tsx
-import React from "react";
 
 export interface SettingsTab {
   id: string;
