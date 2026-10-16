@@ -1,5 +1,5 @@
 // src/components/UserProfileCard.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import Input from "./Input";
 import Button from "./Button";
 import { Camera, Save } from "lucide-react";

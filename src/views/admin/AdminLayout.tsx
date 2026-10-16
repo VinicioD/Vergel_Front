@@ -1,5 +1,5 @@
 // src/views/admin/AdminLayout.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import { adminMenu } from "../../config/menuConfig";
@@ -22,7 +22,7 @@ export default function AdminLayout() {
         items={fullAdminMenu}
       />
 
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-4 pt-16 md:p-6 md:pt-6 overflow-y-auto min-w-0 transition-all">
         <Outlet />
       </main>
     </div>

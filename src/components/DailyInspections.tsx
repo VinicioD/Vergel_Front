@@ -1,6 +1,5 @@
 // src/components/DailyInspections.tsx
-import React from "react";
-import { MapPin, Plus } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Button from "./Button";
 
 export interface Inspection {

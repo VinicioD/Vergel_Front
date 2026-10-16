@@ -1,6 +1,6 @@
 // src/components/FileUpload.tsx
 import React from "react";
-import { UploadCloud, Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon } from "lucide-react";
 
 interface FileUploadProps {
   label?: string;
