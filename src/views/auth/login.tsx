@@ -1,17 +1,17 @@
 // src/views/auth/login.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isAxiosError } from "axios";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import logoImg from "../../assets/Logo.png";
 import fondoLight from "../../assets/Fondo_light.jpeg";
 import { login } from "../../services/authService";
+import { getRoleHomePath } from "../../config/roles";
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
   // Estados para la llamada a la API
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,10 +26,15 @@ export default function Login() {
       await login({ email, password });
 
       // Al ser exitoso, redirige a la vista deseada
-      navigate("/admin/catalog");
-    } catch (error: any) {
+      navigate(getRoleHomePath(localStorage.getItem("role")), {
+        replace: true,
+      });
+    } catch (error: unknown) {
       console.error("Error al iniciar sesión:", error);
-      if (error.response?.status === 422 || error.response?.status === 401) {
+      if (
+        isAxiosError(error) &&
+        (error.response?.status === 422 || error.response?.status === 401)
+      ) {
         setErrorMessage("Las credenciales proporcionadas son incorrectas.");
       } else {
         setErrorMessage(
@@ -41,29 +46,16 @@ export default function Login() {
     }
   };
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
   const bgLight = fondoLight;
-  const bgDark =
-    "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=1000&auto=format&fit=crop";
 
   return (
     <div
-      className={`min-h-screen w-full flex flex-col md:flex-row font-sans transition-colors duration-300 ${
-        isDarkMode ? "bg-gray-900" : "bg-[#E3E3E3]"
-      }`}
+      className="min-h-screen w-full flex flex-col md:flex-row font-sans transition-colors duration-300 bg-[#E3E3E3]"
     >
       {/* Columna Izquierda: Imagen de Fondo */}
       <div className="hidden md:block md:w-1/2 lg:w-7/12 h-64 md:h-screen relative overflow-hidden">
         <img
-          src={isDarkMode ? bgDark : bgLight}
+          src={bgLight}
           alt="Fondo Jardinería"
           className="w-full h-full object-cover transition-all duration-500"
         />

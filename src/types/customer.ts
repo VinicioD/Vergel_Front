@@ -109,4 +109,8 @@ export interface ClientsViewProps {
   title?: string;
   subtitle?: string;
   searchPlaceholder?: string;
+  canCreate?: boolean;
+  canEdit?: boolean;
+  canDeactivate?: boolean;
+  canDelete?: boolean;
 }
