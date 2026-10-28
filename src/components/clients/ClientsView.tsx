@@ -96,6 +96,10 @@ const DetailItem = ({ label, value }: { label: string; value: ReactNode }) => (
 
 export default function ClientsView({
   searchPlaceholder = "Buscar por cliente, NIT, NRC o teléfono...",
+  canCreate = true,
+  canEdit = true,
+  canDeactivate = true,
+  canDelete = true,
 }: ClientsViewProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -169,6 +173,8 @@ export default function ClientsView({
   }, [searchTerm, selectedStatusFilter]);
 
   const handleOpenAdd = () => {
+    if (!canCreate) return;
+
     setSelectedClientId(null);
     setSelectedClientData(null);
     setViewMode("form");
@@ -187,6 +193,8 @@ export default function ClientsView({
   };
 
   const handleOpenEdit = async (clientItem: Client) => {
+    if (!canEdit) return;
+
     setLoadingDetail(true);
     try {
       const detailResponse = await getCustomerById(clientItem.id);
@@ -219,6 +227,13 @@ export default function ClientsView({
   };
 
   const handleSaveClient = async (formData: ClientData) => {
+    if (
+      (selectedClientId && !canEdit) ||
+      (!selectedClientId && !canCreate)
+    ) {
+      return;
+    }
+
     try {
       const cleanPayload: CreateCustomerPayload = {
         legal_name: formData.legal_name.trim(),
@@ -269,18 +284,31 @@ export default function ClientsView({
 
   const handleToggleStatus = async (client: Client) => {
     const newStatus = client.status === "Activo" ? "inactive" : "active";
+    if (!canDeactivate && newStatus === "inactive") return;
+
     setActionLoading(client.id);
     try {
       await updateCustomerStatus(client.id, newStatus);
       await fetchClients(searchTerm, selectedStatusFilter);
     } catch (error) {
       console.error("Error al cambiar estado del cliente:", error);
+
+      if (isAxiosError(error)) {
+        // 👈 Esto nos dirá exactamente qué código HTTP está mandando el backend
+        alert(`Código de error del servidor: ${error.response?.status}`);
+
+        if (error.response?.status === 403) {
+          alert("No tienes permisos suficientes para realizar esta acción.");
+        }
+      }
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDelete = async (id: number) => {
+    if (!canDelete) return;
+
     if (confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
       setActionLoading(id);
       try {
@@ -288,6 +316,11 @@ export default function ClientsView({
         await fetchClients(searchTerm, selectedStatusFilter);
       } catch (error) {
         console.error("Error al eliminar cliente en BDD:", error);
+
+        // 👈 AQUÍ TAMBIÉN LO COLOCAS
+        if (isAxiosError(error) && error.response?.status === 403) {
+          alert("No tienes permisos suficientes para eliminar registros.");
+        }
       } finally {
         setActionLoading(null);
       }
@@ -476,6 +509,11 @@ export default function ClientsView({
   return (
     <div className="w-full h-[calc(100dvh-5rem)] md:h-[calc(100dvh-3rem)] flex flex-col gap-6 p-4 sm:p-6 font-sans overflow-hidden">
       {/* FILTROS Y ACCIONES SUPERIORES */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#2A3319] dark:text-gray-100">
+          Gestion de Clientes
+        </h1>
+      </div>
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shrink-0">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           {/* Buscador de cliente */}
@@ -593,14 +631,16 @@ export default function ClientsView({
           </div>
 
           {/* Botón Nuevo Cliente */}
-          <button
-            type="button"
-            onClick={handleOpenAdd}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5b642a] hover:bg-[#4a5222] text-white rounded-2xl text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Nuevo Cliente</span>
-          </button>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5b642a] hover:bg-[#4a5222] text-white rounded-2xl text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Nuevo Cliente</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -702,17 +742,19 @@ export default function ClientsView({
                         </button>
 
                         {/* Editar */}
-                        <button
-                          title="Editar cliente"
-                          type="button"
-                          onClick={() => handleOpenEdit(client)}
-                          disabled={
-                            loadingDetail || actionLoading === client.id
-                          }
-                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Edit size={16} />
-                        </button>
+                        {canEdit && (
+                          <button
+                            title="Editar cliente"
+                            type="button"
+                            onClick={() => handleOpenEdit(client)}
+                            disabled={
+                              loadingDetail || actionLoading === client.id
+                            }
+                            className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        )}
 
                         {/* Descargar ficha del registro */}
                         <button
@@ -725,28 +767,34 @@ export default function ClientsView({
                         </button>
 
                         {/* Cambiar estado (Activar / Inactivar) */}
-                        <button
-                          title={
-                            client.status === "Activo" ? "Inactivar" : "Activar"
-                          }
-                          type="button"
-                          onClick={() => handleToggleStatus(client)}
-                          disabled={actionLoading === client.id}
-                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Power size={16} />
-                        </button>
+                        {(canDeactivate || client.status !== "Activo") && (
+                          <button
+                            title={
+                              client.status === "Activo"
+                                ? "Inactivar"
+                                : "Activar"
+                            }
+                            type="button"
+                            onClick={() => handleToggleStatus(client)}
+                            disabled={actionLoading === client.id}
+                            className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Power size={16} />
+                          </button>
+                        )}
 
                         {/* Eliminar */}
-                        <button
-                          title="Eliminar cliente"
-                          type="button"
-                          onClick={() => handleDelete(client.id)}
-                          disabled={actionLoading === client.id}
-                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {canDelete && (
+                          <button
+                            title="Eliminar cliente"
+                            type="button"
+                            onClick={() => handleDelete(client.id)}
+                            disabled={actionLoading === client.id}
+                            className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -1,41 +1,59 @@
-// src/services/authService.ts
-import { api } from "./api";
+import { API_BASE_URL, api } from "./api";
 import type { LoginCredentials, LoginResponse } from "../types/auth";
+import { normalizeRoleName } from "../config/roles";
 
-// 1. Iniciar sesión
 export const login = async (
   credentials: LoginCredentials,
 ): Promise<LoginResponse> => {
-  // Especificamos la URL completa del endpoint de login para evitar problemas de ruta con el v1
-  const response = await api.post<LoginResponse>(
-    "https://vergel-api-evy7.onrender.com/api/login",
-    credentials,
-  );
+  const loginUrl = new URL("/api/login", API_BASE_URL).toString();
+  const response = await api.post<LoginResponse>(loginUrl, credentials);
 
-  // Guarda el token generado por Laravel Sanctum en localStorage bajo ambas claves
-  if (response.data?.data?.access_token) {
-    const token = response.data.data.access_token;
+  const payload = response.data?.data ?? response.data;
+  const token =
+    payload?.access_token ??
+    payload?.token ??
+    response.data?.access_token ??
+    response.data?.token;
+  const user = payload?.user ?? response.data?.user;
+
+  if (token) {
     localStorage.setItem("token", token);
+    localStorage.setItem("auth_token", token);
+  }
+
+  const roleCandidates = [
+    user?.employee?.role_id,
+    user?.role_id,
+    user?.employee?.role,
+    user?.role,
+  ];
+  const roleName =
+    roleCandidates.map(normalizeRoleName).find((candidate) => candidate) || "";
+  if (roleName) {
+    localStorage.setItem("role", roleName);
+  } else {
+    localStorage.removeItem("role");
+  }
+
+  if (user) {
+    localStorage.setItem("user", JSON.stringify(user));
   }
 
   return response.data;
 };
 
-// 2. Cerrar sesión
 export const logout = async (): Promise<void> => {
   try {
-    // Intentamos avisar al backend que destruya el token
     await api.post("/logout");
   } catch (error) {
     console.error("Error en el servidor al cerrar sesión:", error);
   } finally {
-    // Limpieza obligatoria local ocurra lo que ocurra con el backend
     localStorage.removeItem("auth_token");
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
     localStorage.removeItem("user");
     sessionStorage.clear();
 
-    // Forzar redirección y recarga para limpiar estados de React
     window.location.href = "/login";
   }
 };
