@@ -6,6 +6,10 @@ export default function ClientsPage() {
     <ClientsView
       title="Mis Clientes"
       subtitle="Consulta y actualiza los clientes a los que cotizas."
+      canCreate={false}
+      canEdit={false}
+      canDeactivate={false}
+      canDelete={false}
     />
   );
 }
