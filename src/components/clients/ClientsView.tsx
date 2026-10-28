@@ -476,6 +476,11 @@ export default function ClientsView({
   return (
     <div className="w-full h-[calc(100dvh-5rem)] md:h-[calc(100dvh-3rem)] flex flex-col gap-6 p-4 sm:p-6 font-sans overflow-hidden">
       {/* FILTROS Y ACCIONES SUPERIORES */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#2A3319] dark:text-gray-100">
+          Gestion de Clientes
+        </h1>
+      </div>
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shrink-0">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           {/* Buscador de cliente */}
