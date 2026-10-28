@@ -2,9 +2,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    "https://vergel-api-evy7.onrender.com/api/v1",
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
