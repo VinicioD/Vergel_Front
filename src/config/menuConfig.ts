@@ -12,6 +12,7 @@ import {
   ArrowRightLeft,
   UserCheck,
   User,
+  ShieldCheck,
   Settings,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ export const adminMenu = [
   { name: "Movimientos", icon: ArrowRightLeft, path: "/admin/transactions" },
   { name: "Colaboradores", icon: UserCheck, path: "/admin/collaborators" },
   { name: "Usuarios", icon: User, path: "/admin/users" },
+  { name: "Roles", icon: ShieldCheck, path: "/admin/roles" },
   { name: "Configuración", icon: Settings, path: "/admin/settings" },
 ];
 

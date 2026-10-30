@@ -21,6 +21,7 @@ import TransactionsPage from "./modules/transactions/TransactionsPage";
 import WalletPage from "./modules/wallet/WalletPage";
 import ProfilePage from "./modules/profile/ProfilePage";
 import UsersPage from "./modules/users/UsersPage";
+import RolesPage from "./modules/roles/RolesPage";
 
 export default function AdminRoutes() {
   return (
@@ -43,6 +44,7 @@ export default function AdminRoutes() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="roles" element={<RolesPage />} />
       </Route>
 
       {/* Redirección por defecto si la URL no existe o si entran solo a /admin */}
