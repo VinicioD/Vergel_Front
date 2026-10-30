@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { isAxiosError } from "axios";
+import Swal from "sweetalert2";
 import {
   Search,
   Plus,
@@ -80,6 +81,43 @@ const getStatusBadge = (status: string) =>
     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
     : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300";
 
+const showClientToast = (
+  icon: "success" | "error" | "warning",
+  title: string,
+) => {
+  void Swal.fire({
+    toast: true,
+    position: "top-end",
+    icon,
+    title,
+    showConfirmButton: false,
+    timer: 3500,
+    timerProgressBar: true,
+  });
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (!isAxiosError(error)) return fallback;
+
+  const responseData = error.response?.data as
+    | {
+        message?: string;
+        error?: string;
+        errors?: Record<string, string | string[]>;
+      }
+    | undefined;
+  const validationErrors = responseData?.errors;
+
+  if (validationErrors) {
+    const messages = Object.values(validationErrors).flatMap((value) =>
+      Array.isArray(value) ? value : [value],
+    );
+    if (messages.length > 0) return messages.join(" ");
+  }
+
+  return responseData?.message || responseData?.error || fallback;
+};
+
 const DETAIL_ITEM_BASE =
   "p-3 bg-gray-50 dark:bg-gray-900/50 rounded-2xl flex flex-col gap-1 min-w-0";
 const DETAIL_LABEL =
@@ -96,10 +134,10 @@ const DetailItem = ({ label, value }: { label: string; value: ReactNode }) => (
 
 export default function ClientsView({
   searchPlaceholder = "Buscar por cliente, NIT, NRC o teléfono...",
-  canCreate = true,
-  canEdit = true,
-  canDeactivate = true,
-  canDelete = true,
+  canCreate = false,
+  canEdit = false,
+  canDeactivate = false,
+  canDelete = false,
 }: ClientsViewProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,6 +225,10 @@ export default function ClientsView({
       setViewDetailModal(detailResponse.data);
     } catch (error) {
       console.error("Error al obtener detalle del cliente:", error);
+      showClientToast(
+        "error",
+        getApiErrorMessage(error, "No se pudo cargar el cliente para editarlo."),
+      );
     } finally {
       setLoadingDetail(false);
     }
@@ -270,15 +312,18 @@ export default function ClientsView({
 
       await fetchClients(searchTerm, selectedStatusFilter);
       setViewMode("list");
+      showClientToast(
+        "success",
+        selectedClientId
+          ? "Cliente actualizado correctamente"
+          : "Cliente creado correctamente",
+      );
     } catch (error) {
       console.error("Error al guardar cliente en BDD:", error);
-
-      if (isAxiosError(error) && error.response?.status === 422) {
-        const validationErrors = error.response.data?.errors;
-        alert(
-          "Error de validación:\n" + JSON.stringify(validationErrors, null, 2),
-        );
-      }
+      showClientToast(
+        "error",
+        getApiErrorMessage(error, "No se pudo guardar la información del cliente."),
+      );
     }
   };
 
@@ -292,15 +337,13 @@ export default function ClientsView({
       await fetchClients(searchTerm, selectedStatusFilter);
     } catch (error) {
       console.error("Error al cambiar estado del cliente:", error);
-
-      if (isAxiosError(error)) {
-        // 👈 Esto nos dirá exactamente qué código HTTP está mandando el backend
-        alert(`Código de error del servidor: ${error.response?.status}`);
-
-        if (error.response?.status === 403) {
-          alert("No tienes permisos suficientes para realizar esta acción.");
-        }
-      }
+      showClientToast(
+        "error",
+        getApiErrorMessage(
+          error,
+          "No se pudo cambiar el estado del cliente.",
+        ),
+      );
     } finally {
       setActionLoading(null);
     }
@@ -309,21 +352,32 @@ export default function ClientsView({
   const handleDelete = async (id: number) => {
     if (!canDelete) return;
 
-    if (confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
-      setActionLoading(id);
-      try {
-        await deleteCustomer(id);
-        await fetchClients(searchTerm, selectedStatusFilter);
-      } catch (error) {
-        console.error("Error al eliminar cliente en BDD:", error);
+    const confirmation = await Swal.fire({
+      icon: "warning",
+      title: "¿Eliminar cliente?",
+      text: "Esta acción no se puede deshacer.",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#be123c",
+      cancelButtonColor: "#6b7280",
+    });
 
-        // 👈 AQUÍ TAMBIÉN LO COLOCAS
-        if (isAxiosError(error) && error.response?.status === 403) {
-          alert("No tienes permisos suficientes para eliminar registros.");
-        }
-      } finally {
-        setActionLoading(null);
-      }
+    if (!confirmation.isConfirmed) return;
+
+    setActionLoading(id);
+    try {
+      await deleteCustomer(id);
+      await fetchClients(searchTerm, selectedStatusFilter);
+      showClientToast("success", "Cliente eliminado correctamente");
+    } catch (error) {
+      console.error("Error al eliminar cliente en BDD:", error);
+      showClientToast(
+        "error",
+        getApiErrorMessage(error, "No se pudo eliminar el cliente."),
+      );
+    } finally {
+      setActionLoading(null);
     }
   };
 
