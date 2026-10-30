@@ -7,6 +7,8 @@ export default function ClientsPage() {
       subtitle="Consulta, registra y actualiza la información de tus clientes."
       searchPlaceholder="Buscar por nombre, tipo o correo..."
       canDeactivate={false}
+      canCreate={false}
+      canEdit={false}
       canDelete={false}
     />
   );
