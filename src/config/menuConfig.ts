@@ -10,7 +10,6 @@ import {
   DollarSign,
   BookOpen,
   ArrowRightLeft,
-  UserCheck,
   User,
   ShieldCheck,
   Settings,
@@ -28,8 +27,7 @@ export const adminMenu = [
   { name: "Tarifas", icon: DollarSign, path: "/admin/rates" },
   { name: "Catálogo", icon: BookOpen, path: "/admin/catalog" },
   { name: "Movimientos", icon: ArrowRightLeft, path: "/admin/transactions" },
-  { name: "Colaboradores", icon: UserCheck, path: "/admin/collaborators" },
-  { name: "Usuarios", icon: User, path: "/admin/users" },
+  { name: "Colaboradores", icon: User, path: "/admin/users" },
   { name: "Roles", icon: ShieldCheck, path: "/admin/roles" },
   { name: "Configuración", icon: Settings, path: "/admin/settings" },
 ];

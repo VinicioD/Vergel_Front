@@ -115,7 +115,7 @@ export default function UsersPage() {
       <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-            Gestión de Usuarios
+            Gestión de Colaboradores
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Administra accesos, roles y perfiles del personal de la plataforma
