@@ -1,5 +1,5 @@
 // src/views/admin/modules/users/UsersPage.tsx
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Plus,
@@ -12,6 +12,8 @@ import {
 import SearchableSelect, {
   type SelectOption,
 } from "../../../../components/SearchableSelect";
+import { getEmployees } from "../../../../services/employeeService";
+import type { EmployeeApiRecord } from "../../../../types/employee";
 
 interface User {
   id: string;
@@ -24,76 +26,114 @@ interface User {
   joinedDate: string;
 }
 
-const ROLE_OPTIONS: SelectOption[] = [
-  { label: "Todos los roles", value: "ALL" },
-  { label: "Administrador", value: "Administrador" },
-  { label: "Inspector de Campo", value: "Inspector de Campo" },
-  { label: "Jefe de Inspectores", value: "Jefe de Inspectores" },
-  { label: "Asistente", value: "Asistente" },
-];
+const ITEMS_PER_PAGE = 5;
 
-const MOCK_USERS: User[] = [
-  {
-    id: "1",
-    code: "USR-2026-001",
-    name: "Carlos Huerta",
-    email: "carlos.huerta@empresa.com",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
-    role: "Administrador",
-    status: "Activo",
-    joinedDate: "15 Ene 2024",
-  },
-  {
-    id: "2",
-    code: "USR-2026-002",
-    name: "Lucía Mendoza",
-    email: "lucia.mendoza@empresa.com",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100",
-    role: "Asistente",
-    status: "Activo",
-    joinedDate: "20 Mar 2024",
-  },
-  {
-    id: "3",
-    code: "USR-2026-003",
-    name: "Raúl Torres",
-    email: "raul.torres@empresa.com",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100",
-    role: "Jefe de Inspectores",
-    status: "Activo",
-    joinedDate: "10 Jun 2024",
-  },
-  {
-    id: "4",
-    code: "USR-2026-004",
-    name: "María José Delgado",
-    email: "maria.delgado@empresa.com",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100",
-    role: "Inspector de Campo",
-    status: "Inactivo",
-    joinedDate: "05 Sep 2024",
-  },
-  {
-    id: "5",
-    code: "USR-2026-005",
-    name: "Fernando Gómez",
-    email: "fernando.gomez@empresa.com",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100",
-    role: "Inspector de Campo",
-    status: "Pendiente",
-    joinedDate: "12 Ago 2026",
-  },
-];
+const getRoleName = (role: EmployeeApiRecord["role"]): string => {
+  if (typeof role === "string") return role;
+  return role?.name ?? "Sin rol";
+};
+
+const getStatus = (employee: EmployeeApiRecord): User["status"] => {
+  const status = String(employee.status ?? "").toLowerCase();
+  if (status === "pending" || status === "pendiente") return "Pendiente";
+  if (employee.active === false || employee.active === 0 || status === "inactive" || status === "inactivo") {
+    return "Inactivo";
+  }
+  return "Activo";
+};
+
+const formatDate = (date: string | null | undefined): string => {
+  if (!date) return "Sin fecha";
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) return date;
+  return new Intl.DateTimeFormat("es-SV", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(parsedDate);
+};
+
+const mapEmployee = (employee: EmployeeApiRecord): User => ({
+  id: String(employee.id),
+  code: employee.code ?? `EMP-${employee.id}`,
+  name: employee.full_name ?? employee.name ?? employee.user?.name ?? "Sin nombre",
+  email: employee.email ?? employee.user?.email ?? "Sin correo",
+  avatar: employee.avatar ?? "",
+  role: getRoleName(employee.role),
+  status: getStatus(employee),
+  joinedDate: formatDate(employee.hire_date ?? employee.created_at),
+});
 
 export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadEmployees = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getEmployees();
+        if (isMounted) {
+          setUsers(response.data.map(mapEmployee));
+          setErrorMessage("");
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "No se pudieron cargar los colaboradores.",
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    void loadEmployees();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const roleOptions = useMemo<SelectOption[]>(() => {
+    const roles = Array.from(
+      new Set(users.map((user) => user.role).filter((role) => role !== "Sin rol")),
+    );
+    return [
+      { label: "Todos los roles", value: "ALL" },
+      ...roles.map((role) => ({ label: role, value: role })),
+    ];
+  }, [users]);
+
+  const filteredUsers = useMemo(
+    () =>
+      users.filter((user) => {
+        const search = searchTerm.toLowerCase();
+        const matchesSearch = `${user.name} ${user.email}`
+          .toLowerCase()
+          .includes(search);
+        const matchesRole =
+          selectedRole === "ALL" || user.role === selectedRole;
+        return matchesSearch && matchesRole;
+      }),
+    [searchTerm, selectedRole, users],
+  );
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredUsers.length / ITEMS_PER_PAGE),
+  );
+  const visibleUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
 
   // Estilos dinámicos para los badges de estado
   const getStatusBadge = (status: User["status"]) => {
@@ -133,7 +173,10 @@ export default function UsersPage() {
               type="text"
               placeholder="Buscar por nombre o correo..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-xs sm:text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-[#5b642a] shadow-sm transition-all"
             />
           </div>
@@ -142,9 +185,12 @@ export default function UsersPage() {
           <div className="w-full sm:w-auto min-w-[200px]">
             <SearchableSelect
               label="Rol"
-              options={ROLE_OPTIONS}
+              options={roleOptions}
               value={selectedRole}
-              onChange={(val) => setSelectedRole(val)}
+              onChange={(val) => {
+                setSelectedRole(val);
+                setCurrentPage(1);
+              }}
             />
           </div>
         </div>
@@ -184,7 +230,25 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 text-xs sm:text-sm">
-              {MOCK_USERS.map((user) => (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
+                    Cargando colaboradores...
+                  </td>
+                </tr>
+              ) : errorMessage ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-rose-500">
+                    {errorMessage}
+                  </td>
+                </tr>
+              ) : visibleUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
+                    No se encontraron colaboradores.
+                  </td>
+                </tr>
+              ) : visibleUsers.map((user) => (
                 <tr
                   key={user.id}
                   className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group"
@@ -197,11 +261,17 @@ export default function UsersPage() {
                   {/* AVATAR + NOMBRE Y CORREO */}
                   <td className="py-4 px-6 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700 shrink-0"
-                      />
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700 shrink-0"
+                        />
+                      ) : (
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E2E8D5] text-xs font-bold text-[#586A27] dark:bg-gray-700 dark:text-gray-200">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
                       <div className="flex flex-col">
                         <span className="font-bold text-gray-900 dark:text-gray-100">
                           {user.name}
@@ -248,7 +318,7 @@ export default function UsersPage() {
 
                       {/* Editar */}
                       <button
-                        title="Editar usuario"
+                        title="Editar colaborador"
                         type="button"
                         className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
                       >
@@ -266,7 +336,7 @@ export default function UsersPage() {
 
                       {/* Eliminar */}
                       <button
-                        title="Eliminar usuario"
+                        title="Eliminar colaborador"
                         type="button"
                         className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
                       >
@@ -284,13 +354,13 @@ export default function UsersPage() {
       {/* PAGINACIÓN */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
         <span className="text-xs text-gray-500 dark:text-gray-400 order-2 sm:order-1">
-          Mostrando 5 de 24 usuarios
+          Mostrando {visibleUsers.length} de {filteredUsers.length} colaboradores
         </span>
 
         <div className="flex items-center gap-2 order-1 sm:order-2">
           <button
             type="button"
-            disabled={currentPage === 1}
+            disabled={currentPage === 1 || totalPages === 1}
             onClick={() => setCurrentPage((p) => p - 1)}
             className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
@@ -309,9 +379,9 @@ export default function UsersPage() {
             1
           </button>
 
-          <button
+          {totalPages > 1 && <button
             type="button"
-            onClick={() => setCurrentPage(2)}
+            onClick={() => setCurrentPage(Math.min(totalPages, 2))}
             className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
               currentPage === 2
                 ? "bg-[#5b642a] text-white"
@@ -319,11 +389,12 @@ export default function UsersPage() {
             }`}
           >
             2
-          </button>
+          </button>}
 
           <button
             type="button"
-            onClick={() => setCurrentPage((p) => p + 1)}
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
           >
             Siguiente
