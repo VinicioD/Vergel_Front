@@ -1,5 +1,5 @@
 // src/views/admin/modules/users/UsersPage.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Search,
   Plus,
@@ -115,10 +115,10 @@ export default function UsersPage() {
       <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-            Gestión de Usuarios
+            Gestión de Colaboradores
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Administra accesos, roles y perfiles del personal de la plataforma
+            Administra accesos, roles y perfiles de los colaboradores de la plataforma
           </p>
         </div>
       </div>
@@ -126,7 +126,7 @@ export default function UsersPage() {
       {/* FILTROS Y ACCIONES SUPERIORES */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-          {/* Buscador de usuario */}
+          {/* Buscador de colaboradores */}
           <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -164,7 +164,7 @@ export default function UsersPage() {
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5b642a] hover:bg-[#4a5222] text-white rounded-2xl text-xs sm:text-sm font-semibold shadow-sm transition-all"
           >
             <Plus size={16} />
-            <span>Nuevo Usuario</span>
+            <span>Nuevo Colaborador</span>
           </button>
         </div>
       </div>
