@@ -4,16 +4,26 @@ import {
   Search,
   Plus,
   Download,
+  ChevronDown,
   Eye,
   Edit,
   Trash2,
   FileDown,
+  FileText,
+  FileSpreadsheet,
 } from "lucide-react";
 import SearchableSelect, {
   type SelectOption,
 } from "../../../../components/SearchableSelect";
-import { getEmployees } from "../../../../services/employeeService";
+import {
+  createEmployee,
+  deleteEmployee,
+  getEmployees,
+  updateEmployee,
+  type CreateEmployeePayload,
+} from "../../../../services/employeeService";
 import type { EmployeeApiRecord } from "../../../../types/employee";
+import UserForm from "./Form";
 
 interface User {
   id: string;
@@ -22,6 +32,7 @@ interface User {
   email: string;
   avatar: string;
   role: string;
+  roleId: number;
   status: "Activo" | "Inactivo" | "Pendiente";
   joinedDate: string;
 }
@@ -36,7 +47,13 @@ const getRoleName = (role: EmployeeApiRecord["role"]): string => {
 const getStatus = (employee: EmployeeApiRecord): User["status"] => {
   const status = String(employee.status ?? "").toLowerCase();
   if (status === "pending" || status === "pendiente") return "Pendiente";
-  if (employee.active === false || employee.active === 0 || status === "inactive" || status === "inactivo") {
+  if (
+    employee.active === false ||
+    employee.active === 0 ||
+    employee.active === "false" ||
+    status === "inactive" ||
+    status === "inactivo"
+  ) {
     return "Inactivo";
   }
   return "Activo";
@@ -56,12 +73,32 @@ const formatDate = (date: string | null | undefined): string => {
 const mapEmployee = (employee: EmployeeApiRecord): User => ({
   id: String(employee.id),
   code: employee.code ?? `EMP-${employee.id}`,
-  name: employee.full_name ?? employee.name ?? employee.user?.name ?? "Sin nombre",
+  name:
+    employee.fullName ??
+    employee.full_name ??
+    employee.name ??
+    employee.user?.name ??
+    "Sin nombre",
   email: employee.email ?? employee.user?.email ?? "Sin correo",
   avatar: employee.avatar ?? "",
-  role: getRoleName(employee.role),
+  role:
+    employee.roleName ||
+    getRoleName(employee.role),
+  roleId: Number(
+    employee.roleId ??
+    employee.role_id ??
+      (employee.role && typeof employee.role === "object"
+        ? employee.role.id
+        : undefined) ??
+      0,
+  ),
   status: getStatus(employee),
-  joinedDate: formatDate(employee.hire_date ?? employee.created_at),
+  joinedDate: formatDate(
+    employee.hireDate ??
+      employee.hire_date ??
+      employee.createdAt ??
+      employee.created_at,
+  ),
 });
 
 export default function UsersPage() {
@@ -71,6 +108,13 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"pdf" | "excel">("pdf");
+  const [exportScope, setExportScope] = useState("ALL");
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [detailUser, setDetailUser] = useState<User | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -100,7 +144,85 @@ export default function UsersPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshKey]);
+
+  const handleSave = async (payload: CreateEmployeePayload) => {
+    try {
+      const requestPayload = payload.password
+        ? payload
+        : { ...payload, password: undefined };
+      if (selectedUser) {
+        await updateEmployee(selectedUser.id, requestPayload);
+      } else {
+        await createEmployee(payload);
+      }
+      setIsModalOpen(false);
+      setSelectedUser(null);
+      setErrorMessage("");
+      setRefreshKey((current) => current + 1);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "No se pudo registrar el colaborador.",
+      );
+    }
+  };
+
+  const handleDelete = async (user: User) => {
+    if (!window.confirm(`¿Eliminar al colaborador "${user.name}"?`)) return;
+
+    try {
+      await deleteEmployee(user.id);
+      setErrorMessage("");
+      setRefreshKey((current) => current + 1);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "No se pudo eliminar el colaborador.",
+      );
+    }
+  };
+
+  const handleDownload = (user: User) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const escapeHtml = (value: string) =>
+      value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <title>Ficha de ${escapeHtml(user.name)}</title>
+          <style>
+            body { font-family: system-ui, sans-serif; padding: 32px; color: #1f2937; }
+            dl { display: grid; grid-template-columns: 180px 1fr; gap: 12px; }
+            dt { font-weight: 700; } dd { margin: 0; }
+          </style>
+        </head>
+        <body>
+          <h1>Ficha del colaborador</h1>
+          <dl>
+            <dt>Código</dt><dd>${escapeHtml(user.code)}</dd>
+            <dt>Nombre</dt><dd>${escapeHtml(user.name)}</dd>
+            <dt>Correo</dt><dd>${escapeHtml(user.email)}</dd>
+            <dt>Rol</dt><dd>${escapeHtml(user.role)}</dd>
+            <dt>Estado</dt><dd>${escapeHtml(user.status)}</dd>
+            <dt>Fecha de registro</dt><dd>${escapeHtml(user.joinedDate)}</dd>
+          </dl>
+          <script>window.onload = function() { window.print(); window.close(); };</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   const roleOptions = useMemo<SelectOption[]>(() => {
     const roles = Array.from(
@@ -125,6 +247,95 @@ export default function UsersPage() {
       }),
     [searchTerm, selectedRole, users],
   );
+
+  const handleExport = () => {
+    const dataToExport =
+      exportScope === "ALL"
+        ? users
+        : users.filter((user) => user.role === exportScope);
+
+    if (dataToExport.length === 0) {
+      alert("No se encontraron colaboradores para exportar.");
+      return;
+    }
+
+    if (exportFormat === "excel") {
+      const escapeCsv = (value: string) => `"${value.replace(/"/g, '""')}"`;
+      const headers = ["Código", "Nombre", "Correo", "Rol", "Estado", "Fecha de registro"];
+      const rows = dataToExport.map((user) => [
+        escapeCsv(user.code),
+        escapeCsv(user.name),
+        escapeCsv(user.email),
+        escapeCsv(user.role),
+        escapeCsv(user.status),
+        escapeCsv(user.joinedDate),
+      ]);
+      const csvContent = "\uFEFF" + [
+        headers.join(","),
+        ...rows.map((row) => row.join(",")),
+      ].join("\n");
+      const url = URL.createObjectURL(
+        new Blob([csvContent], { type: "text/csv;charset=utf-8;" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Colaboradores_${exportScope}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      const escapeHtml = (value: string) =>
+        value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return;
+
+      const tableRows = dataToExport
+        .map(
+          (user) => `
+            <tr>
+              <td>${escapeHtml(user.code)}</td>
+              <td><b>${escapeHtml(user.name)}</b><br><small>${escapeHtml(user.email)}</small></td>
+              <td>${escapeHtml(user.role)}</td>
+              <td>${escapeHtml(user.status)}</td>
+              <td>${escapeHtml(user.joinedDate)}</td>
+            </tr>`,
+        )
+        .join("");
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+          <head>
+            <title>Reporte de Colaboradores (${escapeHtml(exportScope)})</title>
+            <style>
+              body { font-family: system-ui, sans-serif; padding: 20px; }
+              table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+              th, td { padding: 8px; border-bottom: 1px solid #eee; }
+              th { background: #f3f4f6; border-bottom: 2px solid #ccc; }
+            </style>
+          </head>
+          <body>
+            <h2>Reporte de Colaboradores (${escapeHtml(exportScope.toUpperCase())})</h2>
+            <p>Fecha: ${new Date().toLocaleDateString("es-SV")}</p>
+            <table>
+              <thead><tr><th>Código</th><th>Colaborador</th><th>Rol</th><th>Estado</th><th>Fecha de registro</th></tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+            <script>window.onload = function() { window.print(); window.close(); };</script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+    setExportOpen(false);
+  };
 
   const totalPages = Math.max(
     1,
@@ -196,17 +407,90 @@ export default function UsersPage() {
         </div>
 
         {/* Botones de Exportar y Crear */}
-        <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-3">
           <button
             type="button"
+            onClick={() => setExportOpen((open) => !open)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-2xl text-xs sm:text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700/50 shadow-sm transition-all"
           >
             <Download size={16} />
-            <span>Exportar Lista</span>
+            <span>Exportar</span>
+            <ChevronDown
+              size={14}
+              className={`transition-transform ${exportOpen ? "rotate-180" : ""}`}
+            />
           </button>
+
+          {exportOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setExportOpen(false)}
+              />
+              <div className="absolute right-4 mt-2 z-50 w-64 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  Formato
+                </p>
+                <div className="mb-4 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat("pdf")}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${
+                      exportFormat === "pdf"
+                        ? "bg-[#5b642a]/10 text-[#5b642a] dark:bg-[#5b642a]/20 dark:text-[#a3b355]"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/60"
+                    }`}
+                  >
+                    <FileText size={16} /> PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat("excel")}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${
+                      exportFormat === "excel"
+                        ? "bg-[#5b642a]/10 text-[#5b642a] dark:bg-[#5b642a]/20 dark:text-[#a3b355]"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/60"
+                    }`}
+                  >
+                    <FileSpreadsheet size={16} /> Excel
+                  </button>
+                </div>
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  Rol
+                </p>
+                <div className="mb-4 flex max-h-32 flex-col gap-1 overflow-y-auto">
+                  {roleOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setExportScope(option.value)}
+                      className={`w-full rounded-xl px-3 py-2 text-left text-xs font-medium ${
+                        exportScope === option.value
+                          ? "bg-[#5b642a]/10 text-[#5b642a] dark:bg-[#5b642a]/20 dark:text-[#a3b355]"
+                          : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/60"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#5b642a] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#4a5222]"
+                >
+                  <Download size={16} /> Descargar
+                </button>
+              </div>
+            </>
+          )}
 
           <button
             type="button"
+            onClick={() => {
+              setSelectedUser(null);
+              setIsModalOpen(true);
+            }}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5b642a] hover:bg-[#4a5222] text-white rounded-2xl text-xs sm:text-sm font-semibold shadow-sm transition-all"
           >
             <Plus size={16} />
@@ -214,6 +498,26 @@ export default function UsersPage() {
           </button>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg">
+            <UserForm
+              onClose={() => setIsModalOpen(false)}
+              onSave={handleSave}
+              initialData={
+                selectedUser
+                  ? {
+                      fullName: selectedUser.name,
+                      email: selectedUser.email === "Sin correo" ? "" : selectedUser.email,
+                      roleId: selectedUser.roleId,
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        </div>
+      )}
 
       {/* CONTENEDOR DE LA TABLA (CON SCROLL HORIZONTAL EN MÓVIL) */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden transition-colors">
@@ -311,6 +615,7 @@ export default function UsersPage() {
                       <button
                         title="Ver detalles"
                         type="button"
+                        onClick={() => setDetailUser(user)}
                         className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-[#5b642a] dark:hover:text-[#7c8839] hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
                       >
                         <Eye size={16} />
@@ -320,6 +625,10 @@ export default function UsersPage() {
                       <button
                         title="Editar colaborador"
                         type="button"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setIsModalOpen(true);
+                        }}
                         className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
                       >
                         <Edit size={16} />
@@ -329,6 +638,7 @@ export default function UsersPage() {
                       <button
                         title="Descargar Ficha PDF"
                         type="button"
+                        onClick={() => handleDownload(user)}
                         className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
                       >
                         <FileDown size={16} />
@@ -338,6 +648,7 @@ export default function UsersPage() {
                       <button
                         title="Eliminar colaborador"
                         type="button"
+                        onClick={() => void handleDelete(user)}
                         className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
                       >
                         <Trash2 size={16} />
@@ -350,6 +661,45 @@ export default function UsersPage() {
           </table>
         </div>
       </div>
+
+      {detailUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-6 flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E2E8D5] font-bold text-[#586A27] dark:bg-gray-700 dark:text-gray-200">
+                {detailUser.name.charAt(0).toUpperCase()}
+              </span>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {detailUser.name}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {detailUser.email}
+                </p>
+              </div>
+            </div>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <dt className="text-gray-500 dark:text-gray-400">Código</dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">{detailUser.code}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Rol</dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">{detailUser.role}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Estado</dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">{detailUser.status}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Fecha de registro</dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">{detailUser.joinedDate}</dd>
+            </dl>
+            <div className="mt-7 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setDetailUser(null)}
+                className="rounded-2xl bg-[#5b642a] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a5222]"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PAGINACIÓN */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
