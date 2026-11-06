@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  variant?: "primary" | "outline" | "ghost";
+  variant?: "primary" | "outline" | "ghost" | "danger";
   icon?: LucideIcon;
 }
 
@@ -23,6 +23,8 @@ const variants = {
       "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-900 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/60 shadow-sm focus:ring-zinc-400 dark:focus:ring-zinc-600",
     ghost:
       "bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 focus:ring-zinc-300 dark:focus:ring-zinc-700",
+    danger:
+      "bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white shadow-sm focus:ring-red-500",
   };
 
   return (

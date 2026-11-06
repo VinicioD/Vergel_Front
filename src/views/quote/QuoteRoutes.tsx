@@ -10,6 +10,7 @@ import ClientsPage from "./modules/clients/ClientsPage";
 import ProfilePage from "./modules/profile/ProfilePage";
 import QuotesPage from "./modules/quotes/QuotesPage";
 import CatalogPage from "./modules/catalog/CatalogPage";
+import PlantFormPage from "../../components/catalog/PlantFormPage";
 
 export default function QuoteRoutes() {
   return (
@@ -20,6 +21,8 @@ export default function QuoteRoutes() {
         <Route path="clients" element={<ClientsPage />} />
         <Route path="quotes" element={<QuotesPage />} />
         <Route path="catalog" element={<CatalogPage />} />
+        <Route path="catalog/nueva" element={<PlantFormPage />} />
+        <Route path="catalog/:id/editar" element={<PlantFormPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 

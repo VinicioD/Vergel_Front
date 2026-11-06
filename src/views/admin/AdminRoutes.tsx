@@ -7,6 +7,7 @@ import Dashboard from "./Dashboard";
 
 // 2. Vistas ubicadas dentro de /modules
 import CatalogPage from "./modules/catalog/CatalogPage";
+import PlantFormPage from "../../components/catalog/PlantFormPage";
 import ClientsPage from "./modules/clients/ClientsPage";
 import CollaboratorsPage from "./modules/collaborators/CollaboratorsPage";
 import FinancesPage from "./modules/finances/FinancesPage";
@@ -39,6 +40,8 @@ export default function AdminRoutes() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="rates" element={<RatesPage />} />
         <Route path="catalog" element={<CatalogPage />} />
+        <Route path="catalog/nueva" element={<PlantFormPage />} />
+        <Route path="catalog/:id/editar" element={<PlantFormPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="collaborators" element={<CollaboratorsPage />} />
         <Route path="profile" element={<ProfilePage />} />
