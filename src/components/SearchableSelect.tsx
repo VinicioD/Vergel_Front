@@ -12,6 +12,7 @@ interface SearchableSelectProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  className?: string;
 }
 
 export default function SearchableSelect({
@@ -20,6 +21,7 @@ export default function SearchableSelect({
   value,
   onChange,
   placeholder = "Seleccionar...",
+  className = "max-w-xs",
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -45,7 +47,7 @@ export default function SearchableSelect({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-xs font-sans">
+    <div ref={containerRef} className={`relative w-full font-sans ${className}`}>
       {/* Botón Principal (Input Falso con Bordes Redondeados) */}
       <button
         type="button"

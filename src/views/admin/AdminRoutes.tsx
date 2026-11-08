@@ -17,6 +17,7 @@ import QuotesPage from "./modules/quotes/QuotesPage";
 import RatesPage from "./modules/rates/RatesPage";
 import ReportsPage from "./modules/reports/ReportsPage";
 import SchedulePage from "./modules/schedule/SchedulePage";
+import AppointmentFormPage from "./modules/schedule/AppointmentFormPage";
 import SettingsPage from "./modules/settings/SettingsPage";
 import TransactionsPage from "./modules/transactions/TransactionsPage";
 import WalletPage from "./modules/wallet/WalletPage";
@@ -33,6 +34,8 @@ export default function AdminRoutes() {
         <Route path="clients" element={<ClientsPage />} />
         <Route path="quotes" element={<QuotesPage />} />
         <Route path="schedule" element={<SchedulePage />} />
+        <Route path="schedule/new" element={<AppointmentFormPage />} />
+        <Route path="schedule/:id/edit" element={<AppointmentFormPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="plans" element={<PlansPage />} />
         <Route path="wallet" element={<WalletPage />} />

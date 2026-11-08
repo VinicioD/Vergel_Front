@@ -83,6 +83,30 @@ function PlantImage({ imageUrl, imagePath, alt, className }: PlantImageProps) {
   );
 }
 
+function PlantCardSkeleton() {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden animate-pulse">
+      {/* Imagen */}
+      <div className="w-full h-48 sm:h-52 bg-gray-200 dark:bg-gray-700/60" />
+
+      {/* Contenido */}
+      <div className="p-4 sm:p-5 space-y-3">
+        <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-700/60" />
+        <div className="h-3 w-1/2 rounded bg-gray-200 dark:bg-gray-700/60" />
+      </div>
+
+      {/* Pie de la tarjeta */}
+      <div className="p-4 sm:p-5 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-gray-700/50 mt-2">
+        <div className="h-5 w-16 rounded bg-gray-200 dark:bg-gray-700/60" />
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-24 rounded-lg bg-gray-200 dark:bg-gray-700/60" />
+          <div className="h-7 w-8 rounded-lg bg-gray-200 dark:bg-gray-700/60" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CatalogView({
   title = "Catálogo de Plantas",
   subtitle = "Administra e inspecciona todas las especies de tu inventario",
@@ -296,11 +320,12 @@ export default function CatalogView({
         </div>
       </div>
 
-      {/* Contenido / Grid Adaptable de Plantas con Estado de Carga */}
+      {/* Contenido / Grid Adaptable de Plantas con Skeleton de Carga */}
       {loading ? (
-        <div className="w-full py-24 flex flex-col items-center justify-center">
-          <Loader2 className="animate-spin text-[#5d682e]" size={36} />
-          <p className="text-xs text-gray-500 mt-2">Cargando catálogo...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
+            <PlantCardSkeleton key={index} />
+          ))}
         </div>
       ) : plants.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
