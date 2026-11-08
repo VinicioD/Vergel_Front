@@ -53,8 +53,9 @@ export default function UserForm({ onClose, onSave, initialData }: UserFormProps
   const roleOptions: SelectOption[] = roles
     .filter((role) => role.active !== false)
     .map((role) => ({
-      label: role.name || role.role_name || `Rol ${role.id}`,
+      label: role.name || role.role_name || role.roleName || role.title || "Sin nombre",
       value: String(role.id),
+      description: role.description || "Sin descripción",
     }));
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

@@ -2,12 +2,27 @@ import { api } from "./api";
 import type { Role, RolePayload } from "../types/role";
 
 interface RoleCollectionResponse {
-  data: Role[];
+  data: Role[] | { data: Role[] };
 }
+
+const getRoleName = (role: Role): string =>
+  role.name || role.role_name || role.roleName || role.title || "Sin nombre";
 
 const getRolesFromResponse = (
   response: Role[] | RoleCollectionResponse,
-): Role[] => (Array.isArray(response) ? response : response.data);
+): Role[] => {
+  const roles = Array.isArray(response)
+    ? response
+    : Array.isArray(response.data)
+      ? response.data
+      : response.data.data;
+
+  return roles.map((role) => ({
+    ...role,
+    name: getRoleName(role),
+    description: role.description || null,
+  }));
+};
 
 export const getRoles = async (): Promise<Role[]> => {
   const response = await api.get<Role[] | RoleCollectionResponse>("/roles");
