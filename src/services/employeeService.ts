@@ -1,7 +1,18 @@
 import { api } from "./api";
-import type { EmployeeListItem } from "../types/employee";
+import type {
+  EmployeeListItem,
+  EmployeeCollectionResponse,
+} from "../types/employee";
 
-// Forma cruda que puede devolver Laravel (snake_case o camelCase)
+// 1. Tipos de datos para el payload de creación/actualización (de developer)
+export interface CreateEmployeePayload {
+  fullName: string;
+  email: string;
+  password?: string;
+  roleId: number;
+}
+
+// 2. Forma cruda que puede devolver Laravel (de feat-agenda)
 interface RawEmployee {
   id?: number;
   full_name?: string;
@@ -11,23 +22,26 @@ interface RawEmployee {
   role?: { name?: string } | string;
   role_name?: string;
   roleName?: string;
+  email?: string;
 }
 
+// 3. Función de normalización adaptada (de feat-agenda)
 const normalizeEmployee = (raw: RawEmployee): EmployeeListItem => {
   const role =
     typeof raw.role === "string"
       ? raw.role
-      : raw.role?.name ?? raw.role_name ?? raw.roleName ?? "";
+      : (raw.role?.name ?? raw.role_name ?? raw.roleName ?? "");
 
   return {
     id: Number(raw.id ?? 0),
     fullName: raw.full_name ?? raw.fullName ?? raw.name ?? "Colaborador",
     roleName: role,
     active: raw.active !== false,
-  };
+    email: raw.email ?? "",
+  } as EmployeeListItem;
 };
 
-// GET /employees — trae los colaboradores disponibles para asignar citas
+// 4. GET /employees — Con soporte para traer todos ({ params: { all: true } }) y normalización
 export const getEmployees = async (): Promise<EmployeeListItem[]> => {
   const response = await api.get("/employees", { params: { all: true } });
   const payload = response.data;
@@ -41,4 +55,23 @@ export const getEmployees = async (): Promise<EmployeeListItem[]> => {
         : [];
 
   return list.map(normalizeEmployee).filter((employee) => employee.id > 0);
+};
+
+// 5. Métodos CRUD (de developer)
+export const createEmployee = async (payload: CreateEmployeePayload) => {
+  const response = await api.post("/employees", payload);
+  return response.data;
+};
+
+export const updateEmployee = async (
+  id: string | number,
+  payload: CreateEmployeePayload,
+) => {
+  const response = await api.put(`/employees/${id}`, payload);
+  return response.data;
+};
+
+export const deleteEmployee = async (id: string | number) => {
+  const response = await api.delete(`/employees/${id}`);
+  return response.data;
 };
