@@ -13,10 +13,12 @@ import {
   User,
   ShieldCheck,
   Settings,
+  Store,
 } from "lucide-react";
 
 export const adminMenu = [
   { name: "Clientes", icon: Users, path: "/admin/clients" },
+  { name: "Proveedores", icon: Store, path: "/admin/suppliers" },
   { name: "Cotizaciones", icon: FileText, path: "/admin/quotes" },
   { name: "Agenda", icon: Calendar, path: "/admin/schedule" },
   { name: "Historial", icon: History, path: "/admin/history" },

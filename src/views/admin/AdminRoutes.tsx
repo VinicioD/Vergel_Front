@@ -22,6 +22,7 @@ import WalletPage from "./modules/wallet/WalletPage";
 import ProfilePage from "./modules/profile/ProfilePage";
 import UsersPage from "./modules/users/UsersPage";
 import RolesPage from "./modules/roles/RolesPage";
+import SuppliersPage from "./modules/suppliers/SuppliersPage";
 
 export default function AdminRoutes() {
   return (
@@ -30,6 +31,7 @@ export default function AdminRoutes() {
       <Route element={<AdminLayout />}>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="clients" element={<ClientsPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
         <Route path="quotes" element={<QuotesPage />} />
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="history" element={<HistoryPage />} />
