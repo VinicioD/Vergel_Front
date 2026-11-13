@@ -4,6 +4,7 @@ import { ChevronDown, Search, X } from "lucide-react";
 export interface SelectOption {
   label: string;
   value: string;
+  description?: string;
 }
 
 interface SearchableSelectProps {
@@ -30,7 +31,7 @@ export default function SearchableSelect({
   const selectedOption = options.find((opt) => opt.value === value);
 
   const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(search.toLowerCase()),
+    String(opt.label ?? "").toLowerCase().includes(search.toLowerCase()),
   );
 
   useEffect(() => {
@@ -60,9 +61,22 @@ export default function SearchableSelect({
               {label}:
             </span>
           )}
-          <span className="text-gray-600 dark:text-gray-300 truncate">
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
+          {selectedOption ? (
+            <span className="truncate text-left">
+              <span className="block truncate text-gray-600 dark:text-gray-300">
+                {selectedOption.label}
+              </span>
+              {selectedOption.description && (
+                <span className="block truncate text-xs text-gray-400 dark:text-gray-500">
+                  {selectedOption.description}
+                </span>
+              )}
+            </span>
+          ) : (
+            <span className="truncate text-gray-600 dark:text-gray-300">
+              {placeholder}
+            </span>
+          )}
         </div>
         <ChevronDown
           size={18}
@@ -114,7 +128,12 @@ export default function SearchableSelect({
                         : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
                     }`}
                   >
-                    {opt.label}
+                    <span className="block truncate">{opt.label}</span>
+                    {opt.description && (
+                      <span className="block truncate text-[11px] font-normal text-gray-400 dark:text-gray-500">
+                        {opt.description}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))
