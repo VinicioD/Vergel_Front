@@ -1,6 +1,12 @@
 // src/views/admin/modules/schedule/Form.tsx
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Users,
+  CalendarDays,
+  FileText,
+  Loader2,
+} from "lucide-react";
 import Input from "../../../../components/Input";
 import Button from "../../../../components/Button";
 import SearchableSelect, {
@@ -167,8 +173,7 @@ export const Form = ({
 
   const employeeOptions: SelectOption[] = employees
     .filter(
-      (employee) =>
-        employee.active || employee.id === formData.employee_id,
+      (employee) => employee.active || employee.id === formData.employee_id,
     )
     .map((employee) => ({
       label: employee.roleName
@@ -228,355 +233,458 @@ export const Form = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-transparent dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
-      <div className="flex items-center gap-4 mb-6 max-w-4xl mx-auto">
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            title="Volver a la agenda"
-          >
-            <ArrowLeft size={20} />
-          </button>
-        )}
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#2A3319] dark:text-gray-100">
-            {isEditing ? "Editar Cita" : "Agregar Nueva Cita"}
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {isEditing
-              ? "Actualiza los datos de la cita programada."
-              : "Programa una visita o inspección y asígnala a un colaborador."}
-          </p>
+    <div className="min-h-screen w-full dark:bg-gray-950 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
+      {/* Encabezado */}
+      <div className="max-w-7xl mx-auto mb-7">
+        <div className="flex items-center gap-4">
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="Volver a la agenda"
+              className="h-11 w-11 shrink-0 flex items-center justify-center rounded-2xl bg-white dark:bg-gray-800 border border-[#E5E8DC] dark:border-gray-700 text-[#68783B] dark:text-gray-300 shadow-sm hover:bg-[#F0F2E9] dark:hover:bg-gray-700 hover:-translate-x-1 transition-all"
+            >
+              <ArrowLeft size={19} />
+            </button>
+          )}
+
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="h-1.5 w-6 rounded-full bg-[#82934C]" />
+              <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#82934C] dark:text-[#A3B77A]">
+                Gestión de agenda
+              </span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#303B24] dark:text-gray-100">
+              {isEditing ? "Editar Cita" : "Agregar Nueva Cita"}
+            </h1>
+
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {isEditing
+                ? "Actualiza los datos de la cita programada."
+                : "Programa una visita o inspección y asígnala a un colaborador."}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="w-full max-w-4xl bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-300 mx-auto">
+      {/* Formulario */}
+      <div className="max-w-7xl mx-auto bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-[28px] border border-[#E8EBDD] dark:border-gray-800 shadow-[0_12px_45px_rgba(55,70,35,0.07)] overflow-hidden">
+        {/* Franja superior */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-[#5B6D35] via-[#9BAA68] to-[#D5DDBB]" />
+
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-7 p-5 sm:p-7 lg:p-9"
         >
           {loadError && (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs sm:text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
+            <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs sm:text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
               {loadError}
             </p>
           )}
 
-          {/* Cliente: existente o nuevo */}
-          <div className="flex flex-col gap-3">
-            <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-              Cliente *
-            </label>
-
-            {isEditing ? (
-              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl flex flex-col gap-1">
-                <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
-                  Cliente asignado
-                </span>
-                <span className="font-semibold text-gray-800 dark:text-gray-200">
-                  {initialData?.customer?.legalName || "Cliente"}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {initialData?.customer?.phone}
-                  {initialData?.customer?.address
-                    ? ` · ${initialData.customer.address}`
-                    : ""}
-                </span>
+          {/* Grid principal */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-7 xl:gap-9 items-start">
+            {/* COLUMNA 1: CLIENTE */}
+            <div className="flex flex-col gap-5 lg:pr-7 lg:border-r border-[#EDF0E7] dark:border-gray-800">
+              <div className="flex items-center gap-3 pb-3 border-b border-[#EDF0E7] dark:border-gray-800">
+                <div className="h-10 w-10 rounded-xl bg-[#EEF2E5] dark:bg-[#344027]/50 flex items-center justify-center text-[#687C3D] dark:text-[#B4C58A]">
+                  <Users size={19} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-[#303B24] dark:text-gray-100">
+                    Información del cliente
+                  </h2>
+                  <p className="text-[11px] text-gray-400">
+                    Datos de identificación
+                  </p>
+                </div>
               </div>
-            ) : (
-              <>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-gray-900/60 rounded-2xl">
-              <button
-                type="button"
-                onClick={() => {
-                  patchForm({ customer_mode: "existing" });
-                  setErrors({});
-                }}
-                className={`py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                  formData.customer_mode === "existing"
-                    ? "bg-white dark:bg-gray-800 text-[#5b642a] dark:text-[#a3b355] shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                }`}
-              >
-                Cliente existente
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  patchForm({ customer_mode: "new" });
-                  setErrors({});
-                }}
-                className={`py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                  formData.customer_mode === "new"
-                    ? "bg-white dark:bg-gray-800 text-[#5b642a] dark:text-[#a3b355] shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                }`}
-              >
-                Nuevo cliente
-              </button>
+
+              <div className="flex flex-col gap-3">
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                  Cliente <span className="text-red-500">*</span>
+                </label>
+
+                <div className="p-4 bg-[#F6F8F1] dark:bg-gray-800/70 rounded-2xl border border-[#E6EBD9] dark:border-gray-700 flex flex-col gap-2">
+                  <span className="text-[10px] font-bold text-[#82934C] uppercase tracking-wider">
+                    Cliente asignado
+                  </span>
+                  <span className="font-bold text-sm text-gray-800 dark:text-gray-100">
+                    {initialData?.customer?.legalName || "Cliente"}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    {initialData?.customer?.phone}
+                    {initialData?.customer?.address
+                      ? ` · ${initialData.customer.address}`
+                      : ""}
+                  </span>
+                </div>
+
+                {isEditing ? (
+                  <div className="p-4 bg-[#F6F8F1] dark:bg-gray-800/70 rounded-2xl border border-[#E6EBD9] dark:border-gray-700 flex flex-col gap-2">
+                    <span className="text-[10px] font-bold text-[#82934C] uppercase tracking-wider">
+                      Cliente asignado
+                    </span>
+                    <span className="font-bold text-sm text-gray-800 dark:text-gray-100">
+                      {initialData?.customer?.legalName || "Cliente"}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                      {initialData?.customer?.phone}
+                      {initialData?.customer?.address
+                        ? ` · ${initialData.customer.address}`
+                        : ""}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-[#F1F3EC] dark:bg-gray-800 rounded-2xl">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          patchForm({ customer_mode: "existing" });
+                          setErrors({});
+                        }}
+                        className={`py-2.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                          formData.customer_mode === "existing"
+                            ? "bg-white dark:bg-gray-700 text-[#5B6D35] dark:text-[#C1D49A] shadow-sm"
+                            : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                        }`}
+                      >
+                        Cliente existente
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          patchForm({ customer_mode: "new" });
+                          setErrors({});
+                        }}
+                        className={`py-2.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                          formData.customer_mode === "new"
+                            ? "bg-white dark:bg-gray-700 text-[#5B6D35] dark:text-[#C1D49A] shadow-sm"
+                            : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                        }`}
+                      >
+                        Nuevo cliente
+                      </button>
+                    </div>
+
+                    {formData.customer_mode === "existing" ? (
+                      <div className="flex flex-col gap-1">
+                        <SearchableSelect
+                          options={customerOptions}
+                          value={
+                            formData.customer_id
+                              ? String(formData.customer_id)
+                              : ""
+                          }
+                          onChange={(value) => {
+                            patchForm({ customer_id: Number(value) });
+                            clearError("customer_id");
+                          }}
+                          placeholder={
+                            loadingData
+                              ? "Cargando clientes..."
+                              : "Selecciona un cliente"
+                          }
+                          className="max-w-none"
+                        />
+
+                        {errors.customer_id && (
+                          <span className="text-xs text-red-500 dark:text-red-400 mt-1">
+                            {errors.customer_id}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            Nombre Legal / Razón Social *
+                          </label>
+                          <Input
+                            type="text"
+                            required
+                            placeholder="Cliente Ejemplo S.A. de C.V."
+                            value={formData.new_customer?.legal_name || ""}
+                            error={errors.legal_name}
+                            onChange={(event) => {
+                              patchCustomer({ legal_name: event.target.value });
+                              clearError("legal_name");
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            Teléfono *
+                          </label>
+                          <Input
+                            type="text"
+                            required
+                            inputMode="numeric"
+                            maxLength={9}
+                            placeholder="7000-0000"
+                            value={formData.new_customer?.phone || ""}
+                            error={errors.phone}
+                            onChange={(event) => {
+                              patchCustomer({
+                                phone: formatPhone(event.target.value),
+                              });
+                              clearError("phone");
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            Correo Electrónico
+                          </label>
+                          <Input
+                            type="email"
+                            placeholder="cliente@example.com"
+                            value={formData.new_customer?.email || ""}
+                            onChange={(event) =>
+                              patchCustomer({ email: event.target.value })
+                            }
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                              Departamento
+                            </label>
+                            <Input
+                              type="text"
+                              placeholder="San Salvador"
+                              value={formData.new_customer?.department || ""}
+                              onChange={(event) =>
+                                patchCustomer({
+                                  department: event.target.value,
+                                })
+                              }
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                              Municipio *
+                            </label>
+                            <Input
+                              type="text"
+                              required
+                              placeholder="San Salvador"
+                              value={formData.new_customer?.municipality || ""}
+                              error={errors.municipality}
+                              onChange={(event) => {
+                                patchCustomer({
+                                  municipality: event.target.value,
+                                });
+                                clearError("municipality");
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            Dirección *
+                          </label>
+                          <Input
+                            type="text"
+                            required
+                            placeholder="Colonia Centro, San Salvador"
+                            value={formData.new_customer?.address || ""}
+                            error={errors.address}
+                            onChange={(event) => {
+                              patchCustomer({ address: event.target.value });
+                              clearError("address");
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
-            {formData.customer_mode === "existing" ? (
-              <div className="flex flex-col gap-1">
+            {/* COLUMNA 2: PROGRAMACIÓN */}
+            <div className="flex flex-col gap-5 lg:pr-7 lg:border-r border-[#EDF0E7] dark:border-gray-800">
+              <div className="flex items-center gap-3 pb-3 border-b border-[#EDF0E7] dark:border-gray-800">
+                <div className="h-10 w-10 rounded-xl bg-[#EEF2E5] dark:bg-[#344027]/50 flex items-center justify-center text-[#687C3D] dark:text-[#B4C58A]">
+                  <CalendarDays size={19} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-[#303B24] dark:text-gray-100">
+                    Programación
+                  </h2>
+                  <p className="text-[11px] text-gray-400">
+                    Fecha, hora y responsable
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                  Colaborador Asignado *
+                </label>
+
                 <SearchableSelect
-                  options={customerOptions}
+                  options={employeeOptions}
                   value={
-                    formData.customer_id ? String(formData.customer_id) : ""
+                    formData.employee_id ? String(formData.employee_id) : ""
                   }
                   onChange={(value) => {
-                    patchForm({ customer_id: Number(value) });
-                    clearError("customer_id");
+                    patchForm({ employee_id: Number(value) });
+                    clearError("employee_id");
                   }}
                   placeholder={
-                    loadingData ? "Cargando clientes..." : "Selecciona un cliente"
+                    loadingData
+                      ? "Cargando colaboradores..."
+                      : "Selecciona un colaborador"
                   }
                   className="max-w-none"
                 />
-                {errors.customer_id && (
-                  <span className="text-xs text-red-500 dark:text-red-400 mt-0.5">
-                    {errors.customer_id}
+
+                {errors.employee_id && (
+                  <span className="text-xs text-red-500 dark:text-red-400 mt-1">
+                    {errors.employee_id}
                   </span>
                 )}
               </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Nombre Legal / Razón Social *
-                    </label>
-                    <Input
-                      type="text"
-                      required
-                      placeholder="Cliente Ejemplo S.A. de C.V."
-                      value={formData.new_customer?.legal_name || ""}
-                      error={errors.legal_name}
-                      onChange={(event) => {
-                        patchCustomer({ legal_name: event.target.value });
-                        clearError("legal_name");
-                      }}
-                    />
-                  </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Teléfono *
-                    </label>
-                    <Input
-                      type="text"
-                      required
-                      inputMode="numeric"
-                      maxLength={9}
-                      placeholder="7000-0000"
-                      value={formData.new_customer?.phone || ""}
-                      error={errors.phone}
-                      onChange={(event) => {
-                        patchCustomer({ phone: formatPhone(event.target.value) });
-                        clearError("phone");
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Correo Electrónico
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                    Fecha *
                   </label>
                   <Input
-                    type="email"
-                    placeholder="cliente@example.com"
-                    value={formData.new_customer?.email || ""}
-                    onChange={(event) =>
-                      patchCustomer({ email: event.target.value })
-                    }
+                    type="date"
+                    required
+                    value={formData.appointment_date}
+                    error={errors.appointment_date}
+                    onChange={(event) => {
+                      patchForm({ appointment_date: event.target.value });
+                      clearError("appointment_date");
+                    }}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Departamento
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="San Salvador"
-                      value={formData.new_customer?.department || ""}
-                      onChange={(event) =>
-                        patchCustomer({ department: event.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Municipio *
-                    </label>
-                    <Input
-                      type="text"
-                      required
-                      placeholder="San Salvador"
-                      value={formData.new_customer?.municipality || ""}
-                      error={errors.municipality}
-                      onChange={(event) => {
-                        patchCustomer({ municipality: event.target.value });
-                        clearError("municipality");
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Dirección *
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                    Hora *
                   </label>
                   <Input
-                    type="text"
+                    type="time"
                     required
-                    placeholder="Colonia Centro, San Salvador"
-                    value={formData.new_customer?.address || ""}
-                    error={errors.address}
+                    value={formData.appointment_time}
+                    error={errors.appointment_time}
                     onChange={(event) => {
-                      patchCustomer({ address: event.target.value });
-                      clearError("address");
+                      patchForm({ appointment_time: event.target.value });
+                      clearError("appointment_time");
                     }}
                   />
                 </div>
               </div>
-            )}
-              </>
-            )}
-          </div>
 
-          {/* Detalles de la cita */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex flex-col gap-1 sm:col-span-2">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                Colaborador Asignado *
-              </label>
-              <SearchableSelect
-                options={employeeOptions}
-                value={
-                  formData.employee_id ? String(formData.employee_id) : ""
-                }
-                onChange={(value) => {
-                  patchForm({ employee_id: Number(value) });
-                  clearError("employee_id");
-                }}
-                placeholder={
-                  loadingData
-                    ? "Cargando colaboradores..."
-                    : "Selecciona un colaborador"
-                }
-                className="max-w-none"
-              />
-              {errors.employee_id && (
-                <span className="text-xs text-red-500 dark:text-red-400 mt-0.5">
-                  {errors.employee_id}
-                </span>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                  Estado
+                </label>
+                <SearchableSelect
+                  options={isEditing ? EDIT_STATUS_OPTIONS : STATUS_OPTIONS}
+                  value={formData.status}
+                  onChange={(value) =>
+                    patchForm({ status: value as AppointmentStatus })
+                  }
+                  placeholder="Selecciona un estado"
+                  className="max-w-none"
+                />
+              </div>
+
+              {!isEditing && (
+                <label className="flex items-center gap-3 p-3.5 rounded-xl bg-[#F6F8F1] dark:bg-gray-800/70 border border-[#E9EDDF] dark:border-gray-700 cursor-pointer select-none hover:bg-[#EFF3E6] dark:hover:bg-gray-800 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_inspection}
+                    onChange={(event) =>
+                      patchForm({ is_inspection: event.target.checked })
+                    }
+                    className="h-4 w-4 accent-[#5b642a] cursor-pointer"
+                  />
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    Marcar como inspección
+                  </span>
+                </label>
               )}
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                Fecha *
-              </label>
-              <Input
-                type="date"
-                required
-                value={formData.appointment_date}
-                error={errors.appointment_date}
-                onChange={(event) => {
-                  patchForm({ appointment_date: event.target.value });
-                  clearError("appointment_date");
-                }}
-              />
-            </div>
+            {/* COLUMNA 3: NOTAS */}
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center gap-3 pb-3 border-b border-[#EDF0E7] dark:border-gray-800">
+                <div className="h-10 w-10 rounded-xl bg-[#EEF2E5] dark:bg-[#344027]/50 flex items-center justify-center text-[#687C3D] dark:text-[#B4C58A]">
+                  <FileText size={19} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-[#303B24] dark:text-gray-100">
+                    Notas e indicaciones
+                  </h2>
+                  <p className="text-[11px] text-gray-400">
+                    Información adicional
+                  </p>
+                </div>
+              </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                Hora *
-              </label>
-              <Input
-                type="time"
-                required
-                value={formData.appointment_time}
-                error={errors.appointment_time}
-                onChange={(event) => {
-                  patchForm({ appointment_time: event.target.value });
-                  clearError("appointment_time");
-                }}
-              />
-            </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                  Notas
+                </label>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                Estado
-              </label>
-              <SearchableSelect
-                options={isEditing ? EDIT_STATUS_OPTIONS : STATUS_OPTIONS}
-                value={formData.status}
-                onChange={(value) =>
-                  patchForm({ status: value as AppointmentStatus })
-                }
-                placeholder="Selecciona un estado"
-                className="max-w-none"
-              />
-            </div>
-
-            {!isEditing && (
-              <label className="flex items-center gap-3 sm:mt-7 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={formData.is_inspection}
-                  onChange={(event) =>
-                    patchForm({ is_inspection: event.target.checked })
-                  }
-                  className="h-4 w-4 accent-[#5b642a] cursor-pointer"
+                <textarea
+                  rows={8}
+                  placeholder="Indicaciones adicionales para la visita..."
+                  value={formData.notes || ""}
+                  onChange={(event) => patchForm({ notes: event.target.value })}
+                  className="w-full min-h-[190px] px-4 py-3.5 text-sm rounded-2xl border border-[#E1E6D8] dark:border-gray-700 bg-[#FAFBF8] dark:bg-gray-800/80 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none transition-all focus:outline-none focus:ring-2 focus:ring-[#899B58]/20 focus:border-[#82934C]"
                 />
-                <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                  Marcar como inspección
-                </span>
-              </label>
-            )}
-
-            <div className="flex flex-col gap-1 sm:col-span-2">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                Notas
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Indicaciones adicionales para la visita..."
-                value={formData.notes || ""}
-                onChange={(event) => patchForm({ notes: event.target.value })}
-                className="w-full px-4 py-2.5 text-sm rounded-xl border transition-all focus:outline-none focus:ring-1 bg-white text-gray-900 placeholder-gray-400 dark:bg-gray-800/90 dark:text-gray-100 dark:placeholder-gray-500 border-gray-300 focus:border-[#5b642a] focus:ring-[#5b642a] dark:border-gray-700 dark:focus:border-[#7c8839] dark:focus:ring-[#7c8839] resize-none"
-              />
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                  Agrega detalles importantes que el colaborador deba conocer.
+                </p>
+              </div>
             </div>
           </div>
 
+          {/* Cargando */}
           {loadingData && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <Loader2 className="animate-spin text-[#5d682e]" size={14} />
-              <span>Cargando clientes y colaboradores...</span>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#F5F7EF] dark:bg-gray-800/70 border border-[#E9EDDF] dark:border-gray-700">
+              <Loader2 className="animate-spin text-[#718447]" size={17} />
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Cargando clientes y colaboradores...
+              </span>
             </div>
           )}
 
-          {/* Botones de Acción */}
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+          {/* Acciones */}
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-[#EDF0E7] dark:border-gray-800">
             {onClose && (
               <Button
                 type="button"
                 onClick={onClose}
-                style={{ backgroundColor: "#CCC", color: "#333" }}
+                style={{ backgroundColor: "#E9EDE2", color: "#455333" }}
                 className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
             )}
+
             <Button
               type="submit"
-              style={{ backgroundColor: "#6C7D38", color: "#FFF" }}
+              style={{ backgroundColor: "#687C3D", color: "#FFF" }}
               className="w-full sm:w-auto"
               disabled={loadingData}
             >
