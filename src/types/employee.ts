@@ -1,42 +1,26 @@
-export interface EmployeeApiUser {
-  name?: string | null;
-  email?: string | null;
+// Tipos para colaboradores/empleados del backend
+
+export interface EmployeeListItem {
+  id: number;
+  fullName: string;
+  roleName: string;
+  active: boolean;
 }
 
-export interface EmployeeApiRole {
-  id?: number;
-  name?: string | null;
-}
-
+// Tipos adicionales para las respuestas de Laravel y el CRUD
 export interface EmployeeApiRecord {
-  id: number | string;
-  code?: string | null;
-  fullName?: string | null;
-  full_name?: string | null;
-  name?: string | null;
-  email?: string | null;
-  avatar?: string | null;
-  role?: EmployeeApiRole | string | null;
-  roleName?: string | null;
-  role_id?: number | string | null;
-  roleId?: number | string | null;
-  user?: EmployeeApiUser | null;
-  active?: boolean | number | string | null;
-  status?: string | null;
-  hireDate?: string | null;
-  hire_date?: string | null;
-  createdAt?: string | null;
-  created_at?: string | null;
-}
-
-export interface EmployeePaginationMeta {
-  current_page?: number;
-  last_page?: number;
-  per_page?: number;
-  total?: number;
+  id: number;
+  full_name?: string;
+  fullName?: string;
+  name?: string;
+  email: string;
+  active?: boolean;
+  role?: { name?: string } | string;
+  role_name?: string;
+  roleName?: string;
 }
 
 export interface EmployeeCollectionResponse {
-  data: EmployeeApiRecord[];
-  meta?: EmployeePaginationMeta;
+  data: EmployeeApiRecord[] | EmployeeListItem[];
+  [key: string]: any; // Para paginación u otras propiedades de Laravel (links, meta, etc.)
 }
