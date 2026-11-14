@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 import { isAxiosError } from "axios";
-import Swal from "sweetalert2";
 import {
   Search,
   Plus,
@@ -23,6 +22,8 @@ import {
 } from "lucide-react";
 import Form, { type ClientData } from "./Form";
 import SearchableSelect, { type SelectOption } from "../SearchableSelect";
+import Toast, { type ToastType } from "../alerts/Toast";
+import ConfirmDialog from "../alerts/ConfirmDialog";
 import {
   getCustomers,
   getCustomerById,
@@ -80,21 +81,6 @@ const getStatusBadge = (status: string) =>
   status === "Activo" || status === "active"
     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
     : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300";
-
-const showClientToast = (
-  icon: "success" | "error" | "warning",
-  title: string,
-) => {
-  void Swal.fire({
-    toast: true,
-    position: "top-end",
-    icon,
-    title,
-    showConfirmButton: false,
-    timer: 3500,
-    timerProgressBar: true,
-  });
-};
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (!isAxiosError(error)) return fallback;
@@ -162,6 +148,28 @@ export default function ClientsView({
   const [exportFormat, setExportFormat] = useState<"pdf" | "excel">("pdf");
   const [exportScope, setExportScope] = useState("ALL");
 
+  // Alertas (toast y confirmación de eliminación)
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    message: string;
+  } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const showToast = (type: ToastType, message: string) =>
+    setToast({ type, message });
+
+  const closeToast = useCallback(() => setToast(null), []);
+
+  const toastElement = (
+    <Toast
+      type={toast?.type ?? "info"}
+      message={toast?.message ?? ""}
+      isOpen={toast !== null}
+      onClose={closeToast}
+    />
+  );
+
   const fetchClients = async (
     searchQuery: string = "",
     statusFilter: string = "ALL",
@@ -225,7 +233,7 @@ export default function ClientsView({
       setViewDetailModal(detailResponse.data);
     } catch (error) {
       console.error("Error al obtener detalle del cliente:", error);
-      showClientToast(
+      showToast(
         "error",
         getApiErrorMessage(error, "No se pudo cargar el cliente para editarlo."),
       );
@@ -263,6 +271,10 @@ export default function ClientsView({
       setViewMode("form");
     } catch (error) {
       console.error("Error al obtener detalle del cliente:", error);
+      showToast(
+        "error",
+        getApiErrorMessage(error, "No se pudo cargar el cliente para editarlo."),
+      );
     } finally {
       setLoadingDetail(false);
     }
@@ -312,7 +324,7 @@ export default function ClientsView({
 
       await fetchClients(searchTerm, selectedStatusFilter);
       setViewMode("list");
-      showClientToast(
+      showToast(
         "success",
         selectedClientId
           ? "Cliente actualizado correctamente"
@@ -320,7 +332,7 @@ export default function ClientsView({
       );
     } catch (error) {
       console.error("Error al guardar cliente en BDD:", error);
-      showClientToast(
+      showToast(
         "error",
         getApiErrorMessage(error, "No se pudo guardar la información del cliente."),
       );
@@ -335,9 +347,15 @@ export default function ClientsView({
     try {
       await updateCustomerStatus(client.id, newStatus);
       await fetchClients(searchTerm, selectedStatusFilter);
+      showToast(
+        "success",
+        newStatus === "active"
+          ? "Cliente activado correctamente"
+          : "Cliente inactivado correctamente",
+      );
     } catch (error) {
       console.error("Error al cambiar estado del cliente:", error);
-      showClientToast(
+      showToast(
         "error",
         getApiErrorMessage(
           error,
@@ -349,35 +367,31 @@ export default function ClientsView({
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!canDelete) return;
+    setConfirmDeleteId(id);
+  };
 
-    const confirmation = await Swal.fire({
-      icon: "warning",
-      title: "¿Eliminar cliente?",
-      text: "Esta acción no se puede deshacer.",
-      showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "#be123c",
-      cancelButtonColor: "#6b7280",
-    });
+  const handleConfirmDelete = async () => {
+    if (confirmDeleteId === null) return;
+    const id = confirmDeleteId;
 
-    if (!confirmation.isConfirmed) return;
-
+    setConfirmLoading(true);
     setActionLoading(id);
     try {
       await deleteCustomer(id);
       await fetchClients(searchTerm, selectedStatusFilter);
-      showClientToast("success", "Cliente eliminado correctamente");
+      setConfirmDeleteId(null);
+      showToast("success", "Cliente eliminado correctamente");
     } catch (error) {
       console.error("Error al eliminar cliente en BDD:", error);
-      showClientToast(
+      showToast(
         "error",
         getApiErrorMessage(error, "No se pudo eliminar el cliente."),
       );
     } finally {
       setActionLoading(null);
+      setConfirmLoading(false);
     }
   };
 
@@ -389,7 +403,13 @@ export default function ClientsView({
       const detail = detailResponse.data;
 
       const printWindow = window.open("", "_blank");
-      if (!printWindow) return;
+      if (!printWindow) {
+        showToast(
+          "error",
+          "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
+        );
+        return;
+      }
 
       const content = `
         <!DOCTYPE html>
@@ -431,8 +451,10 @@ export default function ClientsView({
 
       printWindow.document.write(content);
       printWindow.document.close();
+      showToast("info", "Ficha del cliente generada correctamente");
     } catch (error) {
       console.error("Error al descargar ficha del cliente:", error);
+      showToast("error", "No se pudo descargar la ficha del cliente.");
     } finally {
       setActionLoading(null);
     }
@@ -452,7 +474,7 @@ export default function ClientsView({
       const dataToExport = response.data;
 
       if (dataToExport.length === 0) {
-        alert("No se encontraron registros para exportar.");
+        showToast("info", "No se encontraron registros para exportar.");
         return;
       }
 
@@ -498,7 +520,13 @@ export default function ClientsView({
         document.body.removeChild(link);
       } else {
         const printWindow = window.open("", "_blank");
-        if (!printWindow) return;
+        if (!printWindow) {
+          showToast(
+            "error",
+            "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
+          );
+          return;
+        }
 
         const tableRows = dataToExport
           .map(
@@ -543,20 +571,25 @@ export default function ClientsView({
       }
 
       setExportOpen(false);
+      showToast("success", "Archivo exportado correctamente");
     } catch (error) {
       console.error("Error al exportar lista de clientes:", error);
+      showToast("error", "No se pudo exportar la lista de clientes.");
     }
   };
 
   // VISTA FORMULARIO
   if (viewMode === "form") {
     return (
-      <Form
-        key={selectedClientId ?? "nuevo"}
-        onClose={() => setViewMode("list")}
-        onSave={handleSaveClient}
-        initialData={selectedClientData}
-      />
+      <>
+        <Form
+          key={selectedClientId ?? "nuevo"}
+          onClose={() => setViewMode("list")}
+          onSave={handleSaveClient}
+          initialData={selectedClientData}
+        />
+        {toastElement}
+      </>
     );
   }
 
@@ -990,6 +1023,21 @@ export default function ClientsView({
           </div>
         </div>
       )}
+
+      {/* ALERTAS */}
+      {toastElement}
+      <ConfirmDialog
+        isOpen={confirmDeleteId !== null}
+        title="¿Eliminar cliente?"
+        message="Esta acción no se puede deshacer. ¿Deseas eliminar este cliente?"
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        isLoading={confirmLoading}
+        onConfirm={handleConfirmDelete}
+        onClose={() => {
+          if (!confirmLoading) setConfirmDeleteId(null);
+        }}
+      />
     </div>
   );
 }
