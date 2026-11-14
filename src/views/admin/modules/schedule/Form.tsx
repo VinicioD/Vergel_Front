@@ -15,7 +15,7 @@ import SearchableSelect, {
 import { getCustomers } from "../../../../services/customerService";
 import { getEmployees } from "../../../../services/employeeService";
 import type { CustomerListItem } from "../../../../types/customer";
-import type { EmployeeListItem } from "../../../../types/employee";
+import type { Employee } from "../../../../types/employee";
 import type {
   Appointment,
   AppointmentStatus,
@@ -133,7 +133,7 @@ export const Form = ({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
-  const [employees, setEmployees] = useState<EmployeeListItem[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -142,12 +142,12 @@ export const Form = ({
 
     Promise.all([
       getCustomers({ limit: 100, status: "active" }),
-      getEmployees(),
+      getEmployees({ per_page: 100 }),
     ])
       .then(([customersResponse, employeeList]) => {
         if (!active) return;
         setCustomers(customersResponse.data);
-        setEmployees(employeeList);
+        setEmployees(employeeList.data);
       })
       .catch((error) => {
         console.error("Error al cargar los datos de la cita:", error);
@@ -307,21 +307,6 @@ export const Form = ({
                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
                   Cliente <span className="text-red-500">*</span>
                 </label>
-
-                <div className="p-4 bg-[#F6F8F1] dark:bg-gray-800/70 rounded-2xl border border-[#E6EBD9] dark:border-gray-700 flex flex-col gap-2">
-                  <span className="text-[10px] font-bold text-[#82934C] uppercase tracking-wider">
-                    Cliente asignado
-                  </span>
-                  <span className="font-bold text-sm text-gray-800 dark:text-gray-100">
-                    {initialData?.customer?.legalName || "Cliente"}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    {initialData?.customer?.phone}
-                    {initialData?.customer?.address
-                      ? ` · ${initialData.customer.address}`
-                      : ""}
-                  </span>
-                </div>
 
                 {isEditing ? (
                   <div className="p-4 bg-[#F6F8F1] dark:bg-gray-800/70 rounded-2xl border border-[#E6EBD9] dark:border-gray-700 flex flex-col gap-2">

@@ -4,24 +4,20 @@ import Input from "../../../../components/Input";
 import SearchableSelect, {
   type SelectOption,
 } from "../../../../components/SearchableSelect";
-import {
-  type CreateEmployeePayload,
-} from "../../../../services/employeeService";
 import { getRoles } from "../../../../services/roleService";
+import type { CreateEmployeePayload } from "../../../../types/employee";
 import type { Role } from "../../../../types/role";
 
 interface UserFormProps {
   onClose: () => void;
   onSave: (data: CreateEmployeePayload) => void | Promise<void>;
-  initialData?: Partial<CreateEmployeePayload> & { name?: string };
+  initialData?: Partial<CreateEmployeePayload> & { roleName?: string };
 }
 
 export default function UserForm({ onClose, onSave, initialData }: UserFormProps) {
   const [formData, setFormData] = useState<CreateEmployeePayload>({
-    fullName: initialData?.fullName ?? initialData?.name ?? "",
-    email: initialData?.email ?? "",
-    password: "",
-    roleId: initialData?.roleId ?? 0,
+    full_name: initialData?.full_name ?? "",
+    role_id: initialData?.role_id ?? 0,
   });
   const [roles, setRoles] = useState<Role[]>([]);
   const [rolesLoading, setRolesLoading] = useState(true);
@@ -57,6 +53,12 @@ export default function UserForm({ onClose, onSave, initialData }: UserFormProps
       value: String(role.id),
       description: role.description || "Sin descripción",
     }));
+  const selectedRoleId =
+    formData.role_id ||
+    Number(
+      roleOptions.find((option) => option.label === initialData?.roleName)
+        ?.value ?? 0,
+    );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -64,9 +66,8 @@ export default function UserForm({ onClose, onSave, initialData }: UserFormProps
     try {
       await onSave({
         ...formData,
-        fullName: formData.fullName.trim(),
-        email: formData.email.trim(),
-        roleId: Number(formData.roleId),
+        full_name: formData.full_name.trim(),
+        role_id: selectedRoleId,
       });
     } finally {
       setIsSaving(false);
@@ -85,47 +86,23 @@ export default function UserForm({ onClose, onSave, initialData }: UserFormProps
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {initialData
             ? "Actualiza los datos del colaborador."
-            : "Registra el usuario y asigna su rol de acceso."}
+            : "Registra los datos básicos del colaborador y asigna su rol."}
         </p>
       </div>
 
       <div className="flex flex-col gap-4">
         <Input
           label="Nombre completo"
-          value={formData.fullName}
+          value={formData.full_name}
           onChange={(event) =>
             setFormData((current) => ({
               ...current,
-              fullName: event.target.value,
+              full_name: event.target.value,
             }))
           }
           placeholder="Ej. María López"
           required
           autoFocus
-        />
-        <Input
-          label="Usuario o correo electrónico"
-          type="email"
-          value={formData.email}
-          onChange={(event) =>
-            setFormData((current) => ({ ...current, email: event.target.value }))
-          }
-          placeholder="usuario@vergel.com"
-          required
-        />
-        <Input
-          label="Contraseña"
-          type="password"
-          value={formData.password}
-          onChange={(event) =>
-            setFormData((current) => ({
-              ...current,
-              password: event.target.value,
-            }))
-          }
-          placeholder="Ingresa una contraseña"
-          minLength={8}
-          required={!initialData}
         />
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -133,11 +110,11 @@ export default function UserForm({ onClose, onSave, initialData }: UserFormProps
           </label>
           <SearchableSelect
             options={roleOptions}
-            value={formData.roleId ? String(formData.roleId) : ""}
+            value={selectedRoleId ? String(selectedRoleId) : ""}
             onChange={(value) =>
               setFormData((current) => ({
                 ...current,
-                roleId: Number(value),
+                role_id: Number(value),
               }))
             }
             placeholder={rolesLoading ? "Cargando roles..." : "Seleccionar rol"}
@@ -160,7 +137,7 @@ export default function UserForm({ onClose, onSave, initialData }: UserFormProps
             isSaving ||
             rolesLoading ||
             roleOptions.length === 0 ||
-            !formData.roleId
+            !selectedRoleId
           }
         >
           {isSaving ? "Guardando..." : initialData ? "Actualizar colaborador" : "Guardar colaborador"}

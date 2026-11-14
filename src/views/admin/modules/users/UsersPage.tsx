@@ -20,9 +20,11 @@ import {
   deleteEmployee,
   getEmployees,
   updateEmployee,
-  type CreateEmployeePayload,
 } from "../../../../services/employeeService";
-import type { EmployeeApiRecord } from "../../../../types/employee";
+import type {
+  Employee,
+  CreateEmployeePayload,
+} from "../../../../types/employee";
 import UserForm from "./Form";
 
 interface User {
@@ -39,21 +41,14 @@ interface User {
 
 const ITEMS_PER_PAGE = 5;
 
-const getRoleName = (role: EmployeeApiRecord["role"]): string => {
+const getRoleName = (role: Employee["role"]): string => {
+  if (!role) return "Sin rol";
   if (typeof role === "string") return role;
-  return role?.name ?? "Sin rol";
+  return role.roleName ?? "Sin rol";
 };
 
-const getStatus = (employee: EmployeeApiRecord): User["status"] => {
-  const status = String(employee.status ?? "").toLowerCase();
-  if (status === "pending" || status === "pendiente") return "Pendiente";
-  if (
-    employee.active === false ||
-    employee.active === 0 ||
-    employee.active === "false" ||
-    status === "inactive" ||
-    status === "inactivo"
-  ) {
+const getStatus = (employee: Employee): User["status"] => {
+  if (employee.active === false) {
     return "Inactivo";
   }
   return "Activo";
@@ -70,35 +65,16 @@ const formatDate = (date: string | null | undefined): string => {
   }).format(parsedDate);
 };
 
-const mapEmployee = (employee: EmployeeApiRecord): User => ({
+const mapEmployee = (employee: Employee): User => ({
   id: String(employee.id),
-  code: employee.code ?? `EMP-${employee.id}`,
-  name:
-    employee.fullName ??
-    employee.full_name ??
-    employee.name ??
-    employee.user?.name ??
-    "Sin nombre",
-  email: employee.email ?? employee.user?.email ?? "Sin correo",
-  avatar: employee.avatar ?? "",
-  role:
-    employee.roleName ||
-    getRoleName(employee.role),
-  roleId: Number(
-    employee.roleId ??
-    employee.role_id ??
-      (employee.role && typeof employee.role === "object"
-        ? employee.role.id
-        : undefined) ??
-      0,
-  ),
+  code: `EMP-${employee.id}`,
+  name: employee.fullName || "Sin nombre",
+  email: "Sin correo", // El backend de empleados no siempre retorna correo en el listado base, se maneja de forma segura
+  avatar: "",
+  role: employee.roleName || getRoleName(employee.role),
+  roleId: employee.role?.id || 0,
   status: getStatus(employee),
-  joinedDate: formatDate(
-    employee.hireDate ??
-      employee.hire_date ??
-      employee.createdAt ??
-      employee.created_at,
-  ),
+  joinedDate: formatDate(employee.hireDate || employee.createdAt),
 });
 
 export default function UsersPage() {
@@ -148,11 +124,8 @@ export default function UsersPage() {
 
   const handleSave = async (payload: CreateEmployeePayload) => {
     try {
-      const requestPayload = payload.password
-        ? payload
-        : { ...payload, password: undefined };
       if (selectedUser) {
-        await updateEmployee(selectedUser.id, requestPayload);
+        await updateEmployee(selectedUser.id, payload);
       } else {
         await createEmployee(payload);
       }
@@ -194,7 +167,7 @@ export default function UsersPage() {
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(/'/g, "&#39;");
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -291,7 +264,7 @@ export default function UsersPage() {
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
+          .replace(/'/g, "&#39;");
       const printWindow = window.open("", "_blank");
       if (!printWindow) return;
 
@@ -341,12 +314,12 @@ export default function UsersPage() {
     1,
     Math.ceil(filteredUsers.length / ITEMS_PER_PAGE),
   );
+  const page = Math.min(currentPage, totalPages);
   const visibleUsers = filteredUsers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE,
   );
 
-  // Estilos dinámicos para los badges de estado
   const getStatusBadge = (status: User["status"]) => {
     switch (status) {
       case "Activo":
@@ -508,9 +481,9 @@ export default function UsersPage() {
               initialData={
                 selectedUser
                   ? {
-                      fullName: selectedUser.name,
-                      email: selectedUser.email === "Sin correo" ? "" : selectedUser.email,
-                      roleId: selectedUser.roleId,
+                      full_name: selectedUser.name,
+                      role_id: selectedUser.roleId,
+                      roleName: selectedUser.role,
                     }
                   : undefined
               }
@@ -710,41 +683,34 @@ export default function UsersPage() {
         <div className="flex items-center gap-2 order-1 sm:order-2">
           <button
             type="button"
-            disabled={currentPage === 1 || totalPages === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
+            disabled={page === 1 || totalPages === 1}
+            onClick={() => setCurrentPage(page - 1)}
             className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Anterior
           </button>
 
-          <button
-            type="button"
-            onClick={() => setCurrentPage(1)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-              currentPage === 1
-                ? "bg-[#5b642a] text-white"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-            }`}
-          >
-            1
-          </button>
-
-          {totalPages > 1 && <button
-            type="button"
-            onClick={() => setCurrentPage(Math.min(totalPages, 2))}
-            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-              currentPage === 2
-                ? "bg-[#5b642a] text-white"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-            }`}
-          >
-            2
-          </button>}
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => setCurrentPage(pageNumber)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                  page === pageNumber
+                    ? "bg-[#5b642a] text-white"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            ),
+          )}
 
           <button
             type="button"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            onClick={() => setCurrentPage(page + 1)}
             className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
           >
             Siguiente
