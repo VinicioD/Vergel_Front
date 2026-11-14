@@ -1,5 +1,6 @@
 // src/views/admin/modules/users/UsersPage.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { isAxiosError } from "axios";
 import {
   Search,
   Plus,
@@ -15,15 +16,42 @@ import {
 import SearchableSelect, {
   type SelectOption,
 } from "../../../../components/SearchableSelect";
+import Toast, { type ToastType } from "../../../../components/alerts/Toast";
+import ConfirmDialog from "../../../../components/alerts/ConfirmDialog";
 import {
   createEmployee,
   deleteEmployee,
+  getEmployeeById,
   getEmployees,
   updateEmployee,
-  type CreateEmployeePayload,
 } from "../../../../services/employeeService";
-import type { EmployeeApiRecord } from "../../../../types/employee";
+import type {
+  Employee,
+  CreateEmployeePayload,
+} from "../../../../types/employee";
 import UserForm from "./Form";
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (!isAxiosError(error)) return fallback;
+
+  const responseData = error.response?.data as
+    | {
+        message?: string;
+        error?: string;
+        errors?: Record<string, string | string[]>;
+      }
+    | undefined;
+  const validationErrors = responseData?.errors;
+
+  if (validationErrors) {
+    const messages = Object.values(validationErrors).flatMap((value) =>
+      Array.isArray(value) ? value : [value],
+    );
+    if (messages.length > 0) return messages.join(" ");
+  }
+
+  return responseData?.message || responseData?.error || fallback;
+};
 
 interface User {
   id: string;
@@ -35,25 +63,40 @@ interface User {
   roleId: number;
   status: "Activo" | "Inactivo" | "Pendiente";
   joinedDate: string;
+  dui?: string;
+  hireDate?: string;
+  department?: string;
+  municipality?: string;
+  address?: string;
 }
 
-const ITEMS_PER_PAGE = 5;
+const mapEmployee = (employee: Employee): User => ({
+  id: String(employee.id),
+  code: `EMP-${employee.id}`,
+  name: employee.fullName || "Sin nombre",
+  email: employee.email || "Sin correo",
+  avatar: "",
+  role: employee.roleName || getRoleName(employee.role),
+  roleId: employee.role?.id || 0,
+  status: getStatus(employee),
+  joinedDate: formatDate(employee.hireDate || employee.createdAt),
+  dui: employee.dui || "No registrado",
+  hireDate: employee.hireDate ? formatDate(employee.hireDate) : "No registrada",
+  department: employee.department || "No registrado",
+  municipality: employee.municipality || "No registrado",
+  address: employee.address || "No registrada",
+});
 
-const getRoleName = (role: EmployeeApiRecord["role"]): string => {
+const ITEMS_PER_PAGE = 10;
+
+const getRoleName = (role: Employee["role"]): string => {
+  if (!role) return "Sin rol";
   if (typeof role === "string") return role;
-  return role?.name ?? "Sin rol";
+  return role.roleName ?? "Sin rol";
 };
 
-const getStatus = (employee: EmployeeApiRecord): User["status"] => {
-  const status = String(employee.status ?? "").toLowerCase();
-  if (status === "pending" || status === "pendiente") return "Pendiente";
-  if (
-    employee.active === false ||
-    employee.active === 0 ||
-    employee.active === "false" ||
-    status === "inactive" ||
-    status === "inactivo"
-  ) {
+const getStatus = (employee: Employee): User["status"] => {
+  if (employee.active === false) {
     return "Inactivo";
   }
   return "Activo";
@@ -70,37 +113,6 @@ const formatDate = (date: string | null | undefined): string => {
   }).format(parsedDate);
 };
 
-const mapEmployee = (employee: EmployeeApiRecord): User => ({
-  id: String(employee.id),
-  code: employee.code ?? `EMP-${employee.id}`,
-  name:
-    employee.fullName ??
-    employee.full_name ??
-    employee.name ??
-    employee.user?.name ??
-    "Sin nombre",
-  email: employee.email ?? employee.user?.email ?? "Sin correo",
-  avatar: employee.avatar ?? "",
-  role:
-    employee.roleName ||
-    getRoleName(employee.role),
-  roleId: Number(
-    employee.roleId ??
-    employee.role_id ??
-      (employee.role && typeof employee.role === "object"
-        ? employee.role.id
-        : undefined) ??
-      0,
-  ),
-  status: getStatus(employee),
-  joinedDate: formatDate(
-    employee.hireDate ??
-      employee.hire_date ??
-      employee.createdAt ??
-      employee.created_at,
-  ),
-});
-
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -108,13 +120,38 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "form">("list");
+  const [formInitialData, setFormInitialData] = useState<
+    (Partial<CreateEmployeePayload> & { roleName?: string }) | undefined
+  >(undefined);
   const [refreshKey, setRefreshKey] = useState(0);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"pdf" | "excel">("pdf");
   const [exportScope, setExportScope] = useState("ALL");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [detailUser, setDetailUser] = useState<User | null>(null);
+
+  // Alertas (toast y confirmación de eliminación)
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    message: string;
+  } | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<User | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const showToast = (type: ToastType, message: string) =>
+    setToast({ type, message });
+
+  const closeToast = useCallback(() => setToast(null), []);
+
+  const toastElement = (
+    <Toast
+      type={toast?.type ?? "info"}
+      message={toast?.message ?? ""}
+      isOpen={toast !== null}
+      onClose={closeToast}
+    />
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -146,55 +183,144 @@ export default function UsersPage() {
     };
   }, [refreshKey]);
 
-  const handleSave = async (payload: CreateEmployeePayload) => {
+  const handleOpenCreate = () => {
+    setSelectedUser(null);
+    setFormInitialData(undefined);
+    setErrorMessage("");
+    setViewMode("form");
+  };
+
+  const handleOpenEdit = async (user: User) => {
+    setSelectedUser(user);
+    setErrorMessage("");
+
     try {
-      const requestPayload = payload.password
-        ? payload
-        : { ...payload, password: undefined };
-      if (selectedUser) {
-        await updateEmployee(selectedUser.id, requestPayload);
-      } else {
-        await createEmployee(payload);
-      }
-      setIsModalOpen(false);
-      setSelectedUser(null);
-      setErrorMessage("");
-      setRefreshKey((current) => current + 1);
+      const response = await getEmployeeById(user.id);
+      const employee = response.data;
+
+      setFormInitialData({
+        full_name: employee.fullName || user.name,
+        role_id: employee.role?.id ?? user.roleId,
+        email: employee.email || "",
+        dui: employee.dui || "",
+        phone: employee.phone || "",
+        birth_date: employee.birthDate || "",
+        hire_date: employee.hireDate || "",
+        address: employee.address || "",
+        municipality: employee.municipality || "",
+        department: employee.department || "",
+        active: employee.active ?? true,
+      });
     } catch (error) {
+      setFormInitialData({
+        full_name: user.name,
+        role_id: user.roleId,
+        roleName: user.role,
+        email: user.email === "Sin correo" ? "" : user.email,
+      });
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "No se pudo registrar el colaborador.",
+          : "No se pudo cargar la información del colaborador.",
       );
+    } finally {
+      setViewMode("form");
     }
   };
 
-  const handleDelete = async (user: User) => {
-    if (!window.confirm(`¿Eliminar al colaborador "${user.name}"?`)) return;
+  const handleCloseForm = () => {
+    setViewMode("list");
+    setSelectedUser(null);
+    setFormInitialData(undefined);
+  };
 
+  const handleSave = async (payload: CreateEmployeePayload) => {
+    const isEditing = Boolean(selectedUser);
+
+    try {
+      if (selectedUser) {
+        await updateEmployee(selectedUser.id, payload);
+      } else {
+        await createEmployee(payload);
+      }
+      handleCloseForm();
+      setErrorMessage("");
+      setRefreshKey((current) => current + 1);
+      showToast(
+        "success",
+        isEditing
+          ? "Colaborador actualizado correctamente"
+          : "Colaborador registrado correctamente",
+      );
+    } catch (error) {
+      const message = getApiErrorMessage(
+        error,
+        "No se pudo registrar el colaborador.",
+      );
+      setErrorMessage(message);
+      showToast("error", message);
+    }
+  };
+
+  const handleDelete = (user: User) => {
+    setConfirmDeleteUser(user);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteUser) return;
+    const user = confirmDeleteUser;
+
+    setConfirmLoading(true);
     try {
       await deleteEmployee(user.id);
       setErrorMessage("");
       setRefreshKey((current) => current + 1);
+      showToast("success", "Colaborador eliminado correctamente");
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "No se pudo eliminar el colaborador.",
+      showToast(
+        "error",
+        getApiErrorMessage(error, "No se pudo eliminar el colaborador."),
       );
+    } finally {
+      setConfirmLoading(false);
+      setConfirmDeleteUser(null);
+    }
+  };
+
+  const handleOpenDetail = async (user: User) => {
+    try {
+      const response = await getEmployeeById(user.id);
+      const emp = response.data;
+      setDetailUser({
+        ...user,
+        dui: emp.dui || "No registrado",
+        hireDate: emp.hireDate ? formatDate(emp.hireDate) : "No registrada",
+        department: emp.department || "No registrado",
+        municipality: emp.municipality || "No registrado",
+        address: emp.address || "No registrada",
+      });
+    } catch {
+      // Si falla la red, al menos muestra lo que ya tiene en memoria
+      setDetailUser(user);
     }
   };
 
   const handleDownload = (user: User) => {
     const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
+    if (!printWindow) {
+      showToast(
+        "error",
+        "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
+      );
+      return;
+    }
     const escapeHtml = (value: string) =>
       value
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(/'/g, "&#39;");
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -222,11 +348,14 @@ export default function UsersPage() {
       </html>
     `);
     printWindow.document.close();
+    showToast("info", "Ficha del colaborador generada correctamente");
   };
 
   const roleOptions = useMemo<SelectOption[]>(() => {
     const roles = Array.from(
-      new Set(users.map((user) => user.role).filter((role) => role !== "Sin rol")),
+      new Set(
+        users.map((user) => user.role).filter((role) => role !== "Sin rol"),
+      ),
     );
     return [
       { label: "Todos los roles", value: "ALL" },
@@ -255,13 +384,20 @@ export default function UsersPage() {
         : users.filter((user) => user.role === exportScope);
 
     if (dataToExport.length === 0) {
-      alert("No se encontraron colaboradores para exportar.");
+      showToast("info", "No se encontraron colaboradores para exportar.");
       return;
     }
 
     if (exportFormat === "excel") {
       const escapeCsv = (value: string) => `"${value.replace(/"/g, '""')}"`;
-      const headers = ["Código", "Nombre", "Correo", "Rol", "Estado", "Fecha de registro"];
+      const headers = [
+        "Código",
+        "Nombre",
+        "Correo",
+        "Rol",
+        "Estado",
+        "Fecha de registro",
+      ];
       const rows = dataToExport.map((user) => [
         escapeCsv(user.code),
         escapeCsv(user.name),
@@ -270,10 +406,9 @@ export default function UsersPage() {
         escapeCsv(user.status),
         escapeCsv(user.joinedDate),
       ]);
-      const csvContent = "\uFEFF" + [
-        headers.join(","),
-        ...rows.map((row) => row.join(",")),
-      ].join("\n");
+      const csvContent =
+        "\uFEFF" +
+        [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
       const url = URL.createObjectURL(
         new Blob([csvContent], { type: "text/csv;charset=utf-8;" }),
       );
@@ -291,9 +426,15 @@ export default function UsersPage() {
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
+          .replace(/'/g, "&#39;");
       const printWindow = window.open("", "_blank");
-      if (!printWindow) return;
+      if (!printWindow) {
+        showToast(
+          "error",
+          "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
+        );
+        return;
+      }
 
       const tableRows = dataToExport
         .map(
@@ -335,18 +476,19 @@ export default function UsersPage() {
     }
 
     setExportOpen(false);
+    showToast("success", "Archivo exportado correctamente");
   };
 
   const totalPages = Math.max(
     1,
     Math.ceil(filteredUsers.length / ITEMS_PER_PAGE),
   );
+  const page = Math.min(currentPage, totalPages);
   const visibleUsers = filteredUsers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE,
   );
 
-  // Estilos dinámicos para los badges de estado
   const getStatusBadge = (status: User["status"]) => {
     switch (status) {
       case "Activo":
@@ -360,6 +502,21 @@ export default function UsersPage() {
     }
   };
 
+  if (viewMode === "form") {
+    return (
+      <>
+        <UserForm
+          key={selectedUser ? `edit-${selectedUser.id}` : "new"}
+          onClose={handleCloseForm}
+          onSave={handleSave}
+          initialData={formInitialData}
+          submitError={errorMessage}
+        />
+        {toastElement}
+      </>
+    );
+  }
+
   return (
     <div className="w-full flex flex-col gap-6 p-4 sm:p-6 font-sans">
       {/* HEADER DE LA VISTA */}
@@ -369,7 +526,8 @@ export default function UsersPage() {
             Gestión de Colaboradores
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Administra accesos, roles y perfiles de los colaboradores de la plataforma
+            Administra accesos, roles y perfiles de los colaboradores de la
+            plataforma
           </p>
         </div>
       </div>
@@ -382,7 +540,7 @@ export default function UsersPage() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Buscar por nombre o correo..."
+              placeholder="Buscar por nombre..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -487,10 +645,7 @@ export default function UsersPage() {
 
           <button
             type="button"
-            onClick={() => {
-              setSelectedUser(null);
-              setIsModalOpen(true);
-            }}
+            onClick={handleOpenCreate}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5b642a] hover:bg-[#4a5222] text-white rounded-2xl text-xs sm:text-sm font-semibold shadow-sm transition-all"
           >
             <Plus size={16} />
@@ -498,26 +653,6 @@ export default function UsersPage() {
           </button>
         </div>
       </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg">
-            <UserForm
-              onClose={() => setIsModalOpen(false)}
-              onSave={handleSave}
-              initialData={
-                selectedUser
-                  ? {
-                      fullName: selectedUser.name,
-                      email: selectedUser.email === "Sin correo" ? "" : selectedUser.email,
-                      roleId: selectedUser.roleId,
-                    }
-                  : undefined
-              }
-            />
-          </div>
-        </div>
-      )}
 
       {/* CONTENEDOR DE LA TABLA (CON SCROLL HORIZONTAL EN MÓVIL) */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden transition-colors">
@@ -535,128 +670,171 @@ export default function UsersPage() {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 text-xs sm:text-sm">
               {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
-                    Cargando colaboradores...
-                  </td>
-                </tr>
+                <>
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                      {/* CÓDIGO */}
+                      <td className="py-4 px-6">
+                        <div className="h-4 w-16 rounded-md bg-gray-200 dark:bg-gray-700" />
+                      </td>
+
+                      {/* USUARIO */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
+                          <div className="flex flex-col gap-2">
+                            <div className="h-3.5 w-32 rounded-md bg-gray-200 dark:bg-gray-700" />
+                            <div className="h-3 w-40 rounded-md bg-gray-100 dark:bg-gray-700/60" />
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* ROL */}
+                      <td className="py-4 px-6">
+                        <div className="h-4 w-20 rounded-md bg-gray-200 dark:bg-gray-700" />
+                      </td>
+
+                      {/* FECHA REGISTRO */}
+                      <td className="py-4 px-6">
+                        <div className="h-4 w-24 rounded-md bg-gray-200 dark:bg-gray-700" />
+                      </td>
+
+                      {/* ESTADO */}
+                      <td className="py-4 px-6">
+                        <div className="h-6 w-20 rounded-full bg-gray-200 dark:bg-gray-700" />
+                      </td>
+
+                      {/* ACCIONES */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="h-7 w-7 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                          <div className="h-7 w-7 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                          <div className="h-7 w-7 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                          <div className="h-7 w-7 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </>
               ) : errorMessage ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-rose-500">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-10 text-center text-rose-500"
+                  >
                     {errorMessage}
                   </td>
                 </tr>
               ) : visibleUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-10 text-center text-gray-400"
+                  >
                     No se encontraron colaboradores.
                   </td>
                 </tr>
-              ) : visibleUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group"
-                >
-                  {/* CÓDIGO */}
-                  <td className="py-4 px-6 font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                    {user.code}
-                  </td>
+              ) : (
+                visibleUsers.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group"
+                  >
+                    {/* CÓDIGO */}
+                    <td className="py-4 px-6 font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                      {user.code}
+                    </td>
 
-                  {/* AVATAR + NOMBRE Y CORREO */}
-                  <td className="py-4 px-6 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      {user.avatar ? (
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700 shrink-0"
-                        />
-                      ) : (
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E2E8D5] text-xs font-bold text-[#586A27] dark:bg-gray-700 dark:text-gray-200">
-                          {user.name.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 dark:text-gray-100">
-                          {user.name}
-                        </span>
-                        <span className="text-[11px] text-gray-400 dark:text-gray-500 font-normal">
-                          {user.email}
-                        </span>
+                    {/* AVATAR + NOMBRE Y CORREO */}
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700 shrink-0"
+                          />
+                        ) : (
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E2E8D5] text-xs font-bold text-[#586A27] dark:bg-gray-700 dark:text-gray-200">
+                            {user.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="font-bold text-gray-900 dark:text-gray-100">
+                            {user.name}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* ROL */}
-                  <td className="py-4 px-6 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {user.role}
-                  </td>
+                    {/* ROL */}
+                    <td className="py-4 px-6 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {user.role}
+                    </td>
 
-                  {/* FECHA REGISTRO */}
-                  <td className="py-4 px-6 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                    {user.joinedDate}
-                  </td>
+                    {/* FECHA REGISTRO */}
+                    <td className="py-4 px-6 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {user.joinedDate}
+                    </td>
 
-                  {/* ESTADO BADGE */}
-                  <td className="py-4 px-6 whitespace-nowrap">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-[11px] font-semibold ${getStatusBadge(
-                        user.status,
-                      )}`}
-                    >
-                      {user.status}
-                    </span>
-                  </td>
-
-                  {/* BOTONES DE ACCIÓN */}
-                  <td className="py-4 px-6 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {/* Ver */}
-                      <button
-                        title="Ver detalles"
-                        type="button"
-                        onClick={() => setDetailUser(user)}
-                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-[#5b642a] dark:hover:text-[#7c8839] hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
+                    {/* ESTADO BADGE */}
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-[11px] font-semibold ${getStatusBadge(
+                          user.status,
+                        )}`}
                       >
-                        <Eye size={16} />
-                      </button>
+                        {user.status}
+                      </span>
+                    </td>
 
-                      {/* Editar */}
-                      <button
-                        title="Editar colaborador"
-                        type="button"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsModalOpen(true);
-                        }}
-                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
-                      >
-                        <Edit size={16} />
-                      </button>
+                    {/* BOTONES DE ACCIÓN */}
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {/* Ver */}
+                        <button
+                          title="Ver detalles"
+                          type="button"
+                          onClick={() => handleOpenDetail(user)}
+                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-[#5b642a] dark:hover:text-[#7c8839] hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
+                        >
+                          <Eye size={16} />
+                        </button>
 
-                      {/* Descargar Ficha */}
-                      <button
-                        title="Descargar Ficha PDF"
-                        type="button"
-                        onClick={() => handleDownload(user)}
-                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
-                      >
-                        <FileDown size={16} />
-                      </button>
+                        {/* Editar */}
+                        <button
+                          title="Editar colaborador"
+                          type="button"
+                          onClick={() => void handleOpenEdit(user)}
+                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
+                        >
+                          <Edit size={16} />
+                        </button>
 
-                      {/* Eliminar */}
-                      <button
-                        title="Eliminar colaborador"
-                        type="button"
-                        onClick={() => void handleDelete(user)}
-                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {/* Descargar Ficha */}
+                        <button
+                          title="Descargar Ficha PDF"
+                          type="button"
+                          onClick={() => handleDownload(user)}
+                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
+                        >
+                          <FileDown size={16} />
+                        </button>
+
+                        {/* Eliminar */}
+                        <button
+                          title="Eliminar colaborador"
+                          type="button"
+                          onClick={() => void handleDelete(user)}
+                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -680,19 +858,52 @@ export default function UsersPage() {
             </div>
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <dt className="text-gray-500 dark:text-gray-400">Código</dt>
-              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">{detailUser.code}</dd>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">
+                {detailUser.code}
+              </dd>
               <dt className="text-gray-500 dark:text-gray-400">Rol</dt>
-              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">{detailUser.role}</dd>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">
+                {detailUser.role}
+              </dd>
+              <dt className="text-gray-500 dark:text-gray-400">DUI</dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">
+                {detailUser.dui}
+              </dd>
+              <dt className="text-gray-500 dark:text-gray-400">
+                Fecha de Contratación
+              </dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">
+                {detailUser.hireDate}
+              </dd>
+              <dt className="text-gray-500 dark:text-gray-400">Departamento</dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">
+                {detailUser.department}
+              </dd>
+              <dt className="text-gray-500 dark:text-gray-400">Municipio</dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">
+                {detailUser.municipality}
+              </dd>
+              <dt className="text-gray-500 dark:text-gray-400">Dirección</dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[180px]">
+                {detailUser.address}
+              </dd>
+
+              <dt className="text-gray-500 dark:text-gray-400">
+                Fecha de registro
+              </dt>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">
+                {detailUser.joinedDate}
+              </dd>
               <dt className="text-gray-500 dark:text-gray-400">Estado</dt>
-              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">{detailUser.status}</dd>
-              <dt className="text-gray-500 dark:text-gray-400">Fecha de registro</dt>
-              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">{detailUser.joinedDate}</dd>
+              <dd className="text-right font-semibold text-gray-900 dark:text-gray-100">
+                {detailUser.status}
+              </dd>
             </dl>
             <div className="mt-7 flex justify-end">
               <button
                 type="button"
                 onClick={() => setDetailUser(null)}
-                className="rounded-2xl bg-[#5b642a] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a5222]"
+                className="rounded-2xl bg-[#5b642a] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a5222] cursor-pointer"
               >
                 Cerrar
               </button>
@@ -704,53 +915,62 @@ export default function UsersPage() {
       {/* PAGINACIÓN */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
         <span className="text-xs text-gray-500 dark:text-gray-400 order-2 sm:order-1">
-          Mostrando {visibleUsers.length} de {filteredUsers.length} colaboradores
+          Mostrando {visibleUsers.length} de {filteredUsers.length}{" "}
+          colaboradores
         </span>
 
         <div className="flex items-center gap-2 order-1 sm:order-2">
           <button
             type="button"
-            disabled={currentPage === 1 || totalPages === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
+            disabled={page === 1 || totalPages === 1}
+            onClick={() => setCurrentPage(page - 1)}
             className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Anterior
           </button>
 
-          <button
-            type="button"
-            onClick={() => setCurrentPage(1)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-              currentPage === 1
-                ? "bg-[#5b642a] text-white"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-            }`}
-          >
-            1
-          </button>
-
-          {totalPages > 1 && <button
-            type="button"
-            onClick={() => setCurrentPage(Math.min(totalPages, 2))}
-            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-              currentPage === 2
-                ? "bg-[#5b642a] text-white"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-            }`}
-          >
-            2
-          </button>}
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => setCurrentPage(pageNumber)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                  page === pageNumber
+                    ? "bg-[#5b642a] text-white"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            ),
+          )}
 
           <button
             type="button"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            onClick={() => setCurrentPage(page + 1)}
             className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
           >
             Siguiente
           </button>
         </div>
       </div>
+
+      {/* ALERTAS */}
+      {toastElement}
+      <ConfirmDialog
+        isOpen={confirmDeleteUser !== null}
+        title="¿Eliminar colaborador?"
+        message="Esta acción no se puede deshacer. ¿Deseas eliminar este colaborador?"
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        isLoading={confirmLoading}
+        onConfirm={handleConfirmDelete}
+        onClose={() => {
+          if (!confirmLoading) setConfirmDeleteUser(null);
+        }}
+      />
     </div>
   );
 }
