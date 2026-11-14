@@ -8,6 +8,7 @@ export interface EmployeeRole {
 export interface Employee {
   id: number;
   fullName: string;
+  email?: string;
   dui: string;
   address?: string;
   municipality?: string;
@@ -57,6 +58,7 @@ export interface EmployeeDetailResponse {
 export interface CreateEmployeePayload {
   full_name: string;
   role_id: number;
+  email?: string;
   dui?: string;
   address?: string;
   municipality?: string;
@@ -70,6 +72,7 @@ export interface CreateEmployeePayload {
 export interface UpdateEmployeePayload {
   full_name?: string;
   role_id?: number;
+  email?: string;
   dui?: string;
   address?: string;
   municipality?: string;
