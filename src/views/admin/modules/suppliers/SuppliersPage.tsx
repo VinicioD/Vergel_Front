@@ -85,6 +85,29 @@ const DETAIL_ITEM_CLASS =
 const field = (...values: (string | null | undefined)[]) =>
 	values.find((value) => typeof value === "string" && value.trim())?.trim() || "";
 
+const formatDigitsWithHyphens = (value: string, groups: number[]) => {
+	const maxDigits = groups.reduce((total, size) => total + size, 0);
+	let digits = value.replace(/\D/g, "").slice(0, maxDigits);
+	let formatted = "";
+
+	for (const size of groups) {
+		if (!digits) break;
+		const group = digits.slice(0, size);
+		digits = digits.slice(size);
+		formatted += `${formatted ? "-" : ""}${group}`;
+	}
+
+	return formatted;
+};
+
+const formatTaxId = (value: string) => {
+	const digits = value.replace(/\D/g, "");
+	return formatDigitsWithHyphens(digits, digits.length > 9 ? [4, 6, 3, 1] : [8, 1]);
+};
+
+const formatNrc = (value: string) => formatDigitsWithHyphens(value, [6, 2]);
+const formatPhone = (value: string) => formatDigitsWithHyphens(value, [4, 4]);
+
 const mapSupplier = (supplier: SupplierRecord): SupplierRow => ({
 	id: supplier.id,
 	name: field(supplier.name, supplier.legal_name, supplier.legalName, supplier.trade_name, supplier.tradeName) || "Proveedor sin nombre",
@@ -500,12 +523,12 @@ export default function SuppliersPage() {
 								<label className="sm:col-span-2"><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Razón social / nombre <span className="text-rose-500">*</span></span><input className={INPUT_CLASS} required maxLength={150} value={formData.name} onChange={(event) => updateFormField("name", event.target.value)} placeholder="Nombre legal del proveedor" /></label>
 								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Nombre comercial</span><input className={INPUT_CLASS} maxLength={150} value={formData.trade_name ?? ""} onChange={(event) => updateFormField("trade_name", event.target.value)} /></label>
 								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Actividad económica</span><input className={INPUT_CLASS} list="supplier-economic-activities" maxLength={150} value={formData.economic_activity ?? ""} onChange={(event) => updateFormField("economic_activity", event.target.value)} placeholder="Selecciona o escribe una actividad" /></label>
-								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">NIT / DUI</span><input className={INPUT_CLASS} maxLength={20} value={formData.tax_id ?? ""} onChange={(event) => updateFormField("tax_id", event.target.value)} /></label>
-								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">NRC</span><input className={INPUT_CLASS} maxLength={20} value={formData.nrc ?? ""} onChange={(event) => updateFormField("nrc", event.target.value)} /></label>
-								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Teléfono principal <span className="text-rose-500">*</span></span><input className={INPUT_CLASS} required maxLength={20} value={formData.phone} onChange={(event) => updateFormField("phone", event.target.value)} /></label>
+								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">NIT / DUI</span><input className={INPUT_CLASS} inputMode="numeric" maxLength={17} value={formData.tax_id ?? ""} onChange={(event) => updateFormField("tax_id", formatTaxId(event.target.value))} /></label>
+								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">NRC</span><input className={INPUT_CLASS} inputMode="numeric" maxLength={9} value={formData.nrc ?? ""} onChange={(event) => updateFormField("nrc", formatNrc(event.target.value))} /></label>
+								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Teléfono principal <span className="text-rose-500">*</span></span><input className={INPUT_CLASS} inputMode="numeric" required maxLength={9} value={formData.phone} onChange={(event) => updateFormField("phone", formatPhone(event.target.value))} /></label>
 								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Correo electrónico</span><input className={INPUT_CLASS} type="email" maxLength={120} value={formData.email ?? ""} onChange={(event) => updateFormField("email", event.target.value)} /></label>
 								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Nombre del contacto</span><input className={INPUT_CLASS} maxLength={150} value={formData.contact_name ?? ""} onChange={(event) => updateFormField("contact_name", event.target.value)} /></label>
-								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Teléfono del contacto</span><input className={INPUT_CLASS} maxLength={20} value={formData.contact_phone ?? ""} onChange={(event) => updateFormField("contact_phone", event.target.value)} /></label>
+								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Teléfono del contacto</span><input className={INPUT_CLASS} inputMode="numeric" maxLength={9} value={formData.contact_phone ?? ""} onChange={(event) => updateFormField("contact_phone", formatPhone(event.target.value))} /></label>
 								<label><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Estado</span><select className={INPUT_CLASS} value={formData.status ?? "active"} onChange={(event) => updateFormField("status", event.target.value as SupplierStatus)}><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label>
 								<label className="sm:col-span-2"><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Dirección</span><input className={INPUT_CLASS} maxLength={255} value={formData.address ?? ""} onChange={(event) => updateFormField("address", event.target.value)} /></label>
 								<label className="sm:col-span-2"><span className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Notas</span><textarea className={`${INPUT_CLASS} min-h-24 resize-y`} value={formData.notes ?? ""} onChange={(event) => updateFormField("notes", event.target.value)} /></label>
