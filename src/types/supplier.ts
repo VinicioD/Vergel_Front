@@ -14,9 +14,12 @@ export interface SupplierRecord {
   economicActivity?: string | null;
   contact_name?: string | null;
   contactName?: string | null;
+  contact_phone?: string | null;
+  contactPhone?: string | null;
   contact_person?: string | null;
   contactPerson?: string | null;
   address?: string | null;
+  notes?: string | null;
   status?: string | null;
   created_at?: string | null;
   createdAt?: string | null;
@@ -55,4 +58,21 @@ export interface PaginatedSuppliersResponse {
 
 export interface SupplierDetailResponse {
   data: SupplierRecord;
+}
+
+export type SupplierStatus = "active" | "inactive";
+
+export interface SupplierPayload {
+  name: string;
+  trade_name?: string;
+  tax_id?: string;
+  nrc?: string;
+  economic_activity?: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  contact_name?: string;
+  contact_phone?: string;
+  status?: SupplierStatus;
+  notes?: string;
 }
