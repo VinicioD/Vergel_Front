@@ -184,6 +184,56 @@ const DetailItem = ({ label, value }: { label: string; value: string }) => (
 	</div>
 );
 
+const SupplierTableSkeleton = () => (
+	<div
+		role="status"
+		aria-label="Cargando proveedores"
+		aria-busy="true"
+		className="w-full overflow-hidden rounded-3xl border border-gray-200/60 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+	>
+		<div className="overflow-x-auto">
+			<table className="w-full min-w-[900px] border-collapse text-left">
+				<thead>
+					<tr className="border-b border-gray-200/40 bg-[#ECE6DB] text-xs font-bold uppercase tracking-wider text-[#3a3d20] dark:border-gray-700 dark:bg-gray-900/90 dark:text-gray-200">
+						<th className="px-6 py-4">Proveedor</th>
+						<th className="px-6 py-4">Contacto</th>
+						<th className="px-6 py-4">Actividad económica</th>
+						<th className="px-6 py-4">Identificación</th>
+						<th className="px-6 py-4">Estado</th>
+						<th className="px-6 py-4 text-center">Acciones</th>
+					</tr>
+				</thead>
+				<tbody className="divide-y divide-gray-100 text-sm dark:divide-gray-700/60">
+					{Array.from({ length: 6 }).map((_, index) => (
+						<tr key={index} className="animate-pulse">
+							<td className="px-6 py-4">
+								<div className="flex items-center gap-3">
+									<div className="h-9 w-9 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
+									<div className="space-y-2">
+										<div className="h-3.5 w-32 rounded-md bg-gray-200 dark:bg-gray-700" />
+										<div className="h-3 w-20 rounded-md bg-gray-100 dark:bg-gray-700/60" />
+									</div>
+								</div>
+							</td>
+							<td className="px-6 py-4">
+								<div className="space-y-2">
+									<div className="h-3 w-28 rounded-md bg-gray-200 dark:bg-gray-700" />
+									<div className="h-3 w-24 rounded-md bg-gray-100 dark:bg-gray-700/60" />
+								</div>
+							</td>
+							<td className="px-6 py-4"><div className="h-3 w-40 rounded-md bg-gray-200 dark:bg-gray-700" /></td>
+							<td className="px-6 py-4"><div className="space-y-2"><div className="h-3 w-24 rounded-md bg-gray-200 dark:bg-gray-700" /><div className="h-3 w-20 rounded-md bg-gray-100 dark:bg-gray-700/60" /></div></td>
+							<td className="px-6 py-4"><div className="h-6 w-16 rounded-full bg-gray-200 dark:bg-gray-700" /></td>
+							<td className="px-6 py-4"><div className="mx-auto flex w-36 justify-center gap-2">{Array.from({ length: 4 }).map((__, actionIndex) => <div key={actionIndex} className="h-8 w-8 rounded-lg bg-gray-200 dark:bg-gray-700" />)}</div></td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+		<span className="sr-only">Cargando proveedores...</span>
+	</div>
+);
+
 export default function SuppliersPage() {
 	const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
 	const [search, setSearch] = useState("");
@@ -490,10 +540,7 @@ export default function SuppliersPage() {
 
 			<section className="min-h-0 flex-1 overflow-auto">
 				{loading ? (
-					<div className="flex h-48 items-center justify-center gap-2 rounded-3xl border border-gray-200/60 bg-white text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-						<Loader2 className="animate-spin text-[#5b642a]" size={20} />
-						Cargando proveedores...
-					</div>
+					<SupplierTableSkeleton />
 				) : (
 					<Table
 						data={suppliers}
