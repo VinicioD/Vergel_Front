@@ -1,0 +1,402 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { Loader2, Plus, Trash2, X } from "lucide-react";
+import Button from "../../../../components/Button";
+import Input from "../../../../components/Input";
+import SearchableSelect, { type SelectOption } from "../../../../components/SearchableSelect";
+import { getCustomers } from "../../../../services/customerService";
+import { getSubscriptionPlans } from "../../../../services/subscriptionPlanService";
+import { getPlants } from "../../../../services/plantService";
+import { createQuote, getQuoteErrorMessage } from "../../../../services/quoteService";
+import type { CustomerListItem } from "../../../../types/customer";
+import type { SubscriptionPlan } from "../../../../types/customer";
+import type { Plant } from "../../../../types/plant";
+import type { CreateQuotePayload, CreateQuoteItemPayload } from "../../../../types/quote";
+
+interface QuoteFormProps {
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+interface QuoteItemRow {
+  itemType: "service" | "plant";
+  serviceId: string;
+  plantId: string;
+  quantity: string;
+  unitPrice: string;
+}
+
+const onlyDigits = (value: string, maxLength = 10) =>
+  value.replace(/[^0-9]/g, "").slice(0, maxLength);
+
+const decimalNumber = (value: string) => {
+  const cleaned = value.replace(/[^0-9.]/g, "");
+  const [whole, ...decimal] = cleaned.split(".");
+  return decimal.length ? `${whole}.${decimal.join("").slice(0, 2)}` : whole;
+};
+
+const emptyItem = (): QuoteItemRow => ({
+  itemType: "service",
+  serviceId: "",
+  plantId: "",
+  quantity: "1",
+  unitPrice: "",
+});
+
+export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
+  const [customerId, setCustomerId] = useState("");
+  const [planId, setPlanId] = useState("");
+  const [includesVat, setIncludesVat] = useState(false);
+  const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState("0");
+  const [status, setStatus] = useState<"pending" | "paid">("pending");
+  const [items, setItems] = useState<QuoteItemRow[]>([emptyItem()]);
+  const [customers, setCustomers] = useState<CustomerListItem[]>([]);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([
+      getCustomers({ limit: 100, status: "active" }),
+      getSubscriptionPlans(),
+      getPlants({ limit: 100, active: true }),
+    ])
+      .then(([customerResponse, planResponse, plantResponse]) => {
+        if (!active) return;
+        setCustomers(customerResponse.data);
+        setPlans(Array.isArray(planResponse) ? planResponse : []);
+        setPlants(plantResponse.data);
+      })
+      .catch((error) => {
+        console.error("Error al cargar datos de la cotización:", error);
+        if (active) {
+          setErrorMessage("No se pudieron cargar clientes, planes o plantas.");
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const customerOptions: SelectOption[] = customers.map((customer) => ({
+    label: customer.tradeName || customer.legalName,
+    value: String(customer.id),
+  }));
+
+  const planOptions: SelectOption[] = plans.map((plan) => ({
+    label: plan.planName || plan.planCode || `Plan ${plan.id}`,
+    value: String(plan.id),
+  }));
+
+  const plantOptions: SelectOption[] = plants.map((plant) => ({
+    label: `${plant.name} — $${Number(plant.price).toFixed(2)}`,
+    value: String(plant.id),
+  }));
+
+  const updateItem = (index: number, patch: Partial<QuoteItemRow>) => {
+    setItems((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    );
+  };
+
+  const validate = () => {
+    const validation: Record<string, string> = {};
+    if (!customerId) validation.customerId = "Selecciona un cliente.";
+    if (!planId) validation.planId = "Selecciona un plan de suscripción.";
+
+    items.forEach((item, index) => {
+      if (item.itemType === "service" && !item.serviceId) {
+        validation[`service_${index}`] = "Ingresa el ID del servicio.";
+      }
+      if (item.itemType === "plant" && !item.plantId) {
+        validation[`plant_${index}`] = "Selecciona una planta.";
+      }
+      if (!item.quantity || Number(item.quantity) <= 0) {
+        validation[`quantity_${index}`] = "La cantidad debe ser mayor a cero.";
+      }
+      if (!item.unitPrice || Number(item.unitPrice) < 0) {
+        validation[`price_${index}`] = "Ingresa un precio válido.";
+      }
+    });
+
+    setErrors(validation);
+    return Object.keys(validation).length === 0;
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!validate()) return;
+
+    setSaving(true);
+    setErrorMessage("");
+
+    const payloadItems: CreateQuoteItemPayload[] = items.map((item) => {
+      const payload: CreateQuoteItemPayload = {
+        item_type: item.itemType,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unitPrice),
+      };
+
+      if (item.itemType === "service") {
+        payload.service_id = Number(item.serviceId);
+      } else {
+        payload.plant_id = Number(item.plantId);
+      }
+      return payload;
+    });
+
+    const payload: CreateQuotePayload = {
+      customer_id: Number(customerId),
+      applied_plan_id: Number(planId),
+      includes_vat: includesVat,
+      loyalty_points_used: Number(loyaltyPointsUsed || 0),
+      status,
+      items: payloadItems,
+    };
+
+    try {
+      console.log("Payload para POST /quotes:", payload);
+      await createQuote(payload);
+      onSaved();
+      onClose();
+    } catch (error) {
+      console.error("Error al crear la cotización:", error);
+      if (typeof error === "object" && error !== null && "response" in error) {
+        console.error("Respuesta 422 del backend:", (error as { response?: { data?: unknown } }).response?.data);
+      }
+      setErrorMessage(
+        getQuoteErrorMessage(error, "No se pudo registrar la cotización."),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !saving) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quote-form-title"
+        className="flex max-h-[96dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-gray-100 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:max-w-5xl sm:rounded-3xl"
+      >
+        <header className="flex items-center justify-between gap-3 border-b border-gray-100 p-4 dark:border-gray-700 sm:p-6">
+          <div>
+            <h2 id="quote-form-title" className="text-lg font-bold text-gray-900 dark:text-gray-100 sm:text-xl">
+              Nueva cotización
+            </h2>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
+              Completa los datos. Los montos se calcularán en el backend.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Cerrar formulario"
+            disabled={saving}
+            onClick={onClose}
+            className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+          >
+            <X size={20} />
+          </button>
+        </header>
+
+        <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+            {errorMessage && (
+              <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
+                {errorMessage}
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex min-h-48 items-center justify-center text-gray-500">
+                <Loader2 className="mr-2 animate-spin" size={22} /> Cargando datos...
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                      Cliente <span className="text-rose-500">*</span>
+                    </label>
+                    <SearchableSelect
+                      options={customerOptions}
+                      value={customerId}
+                      onChange={setCustomerId}
+                      placeholder="Selecciona un cliente"
+                      className="max-w-none"
+                    />
+                    {errors.customerId && <p className="mt-1 text-xs text-rose-500">{errors.customerId}</p>}
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                      Plan aplicado <span className="text-rose-500">*</span>
+                    </label>
+                    <SearchableSelect
+                      options={planOptions}
+                      value={planId}
+                      onChange={setPlanId}
+                      placeholder="Selecciona un plan"
+                      className="max-w-none"
+                    />
+                    {errors.planId && <p className="mt-1 text-xs text-rose-500">{errors.planId}</p>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Puntos usados</label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={8}
+                      value={loyaltyPointsUsed}
+                      onChange={(event) => setLoyaltyPointsUsed(onlyDigits(event.target.value))}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Estado</label>
+                    <SearchableSelect
+                      options={[{ label: "Pendiente", value: "pending" }, { label: "Pagada", value: "paid" }]}
+                      value={status}
+                      onChange={(value) => setStatus(value as "pending" | "paid")}
+                      className="max-w-none"
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-200 md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={includesVat}
+                      onChange={(event) => setIncludesVat(event.target.checked)}
+                      className="h-4 w-4 accent-[#6C7D38]"
+                    />
+                    Los precios ya incluyen IVA
+                  </label>
+                </div>
+
+                <div>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Ítems de la cotización</h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      icon={Plus}
+                      onClick={() => setItems((current) => [...current, emptyItem()])}
+                      className="px-3 py-2"
+                    >
+                      Agregar
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {items.map((item, index) => (
+                      <div key={index} className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 p-3 dark:border-gray-700 sm:grid-cols-2 lg:grid-cols-[130px_1fr_110px_140px_44px]">
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">Tipo</label>
+                          <SearchableSelect
+                            options={[{ label: "Servicio", value: "service" }, { label: "Planta", value: "plant" }]}
+                            value={item.itemType}
+                            onChange={(value) => updateItem(index, { itemType: value as "service" | "plant", serviceId: "", plantId: "" })}
+                            className="max-w-none"
+                          />
+                        </div>
+
+                        {item.itemType === "service" ? (
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">ID del servicio *</label>
+                            <Input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={10}
+                              value={item.serviceId}
+                              onChange={(event) => updateItem(index, { serviceId: onlyDigits(event.target.value) })}
+                              placeholder="Ej. 1"
+                              error={errors[`service_${index}`]}
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">Planta *</label>
+                            <SearchableSelect
+                              options={plantOptions}
+                              value={item.plantId}
+                              onChange={(value) => updateItem(index, { plantId: value, unitPrice: plants.find((plant) => String(plant.id) === value)?.price.toString() || item.unitPrice })}
+                              placeholder="Selecciona una planta"
+                              className="max-w-none"
+                            />
+                            {errors[`plant_${index}`] && <p className="mt-1 text-xs text-rose-500">{errors[`plant_${index}`]}</p>}
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">Cantidad *</label>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            maxLength={10}
+                            value={item.quantity}
+                            onChange={(event) => updateItem(index, { quantity: decimalNumber(event.target.value) })}
+                            error={errors[`quantity_${index}`]}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">Precio unitario *</label>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            maxLength={12}
+                            value={item.unitPrice}
+                            onChange={(event) => updateItem(index, { unitPrice: decimalNumber(event.target.value) })}
+                            placeholder="0.00"
+                            error={errors[`price_${index}`]}
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          aria-label="Eliminar ítem"
+                          disabled={items.length === 1}
+                          onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                          className="mt-6 flex h-10 w-10 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-rose-950/30"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <footer className="flex flex-col-reverse gap-3 border-t border-gray-100 p-4 dark:border-gray-700 sm:flex-row sm:justify-end sm:p-6">
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="w-full sm:w-auto">
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading || saving} className="w-full sm:w-auto">
+              {saving ? "Guardando..." : "Registrar cotización"}
+            </Button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  );
+}
