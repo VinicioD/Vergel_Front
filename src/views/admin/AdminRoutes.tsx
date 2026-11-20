@@ -25,6 +25,7 @@ import UsersPage from "./modules/users/UsersPage";
 import RolesPage from "./modules/roles/RolesPage";
 import SuppliersPage from "./modules/suppliers/SuppliersPage";
 import AuditLogView from "../../components/audit/page";
+import MovementsPage from "./modules/movements/MovementsPage";
 
 export default function AdminRoutes() {
   return (
@@ -53,6 +54,7 @@ export default function AdminRoutes() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
+        <Route path="movements" element={<MovementsPage />} />
       </Route>
 
       {/* Redirección por defecto si la URL no existe o si entran solo a /admin */}
