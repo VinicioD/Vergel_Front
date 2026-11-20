@@ -12,7 +12,6 @@ import {
   FileText,
   FileSpreadsheet,
   ChevronDown,
-  Loader2,
   Power,
   X,
   UserCheck,
@@ -117,6 +116,48 @@ const DetailItem = ({ label, value }: { label: string; value: ReactNode }) => (
     </span>
   </div>
 );
+
+function ClientsTableSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, idx) => (
+        <tr key={idx} className="animate-pulse">
+          <td className="py-4 px-6 whitespace-nowrap">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
+              <div className="space-y-1.5">
+                <div className="h-3.5 w-36 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-2.5 w-20 rounded bg-gray-100 dark:bg-gray-700/60" />
+              </div>
+            </div>
+          </td>
+          <td className="py-4 px-6 whitespace-nowrap">
+            <div className="space-y-1.5">
+              <div className="h-3 w-28 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-2.5 w-36 rounded bg-gray-100 dark:bg-gray-700/60" />
+            </div>
+          </td>
+          <td className="py-4 px-6 whitespace-nowrap">
+            <div className="h-3.5 w-44 rounded bg-gray-200 dark:bg-gray-700" />
+          </td>
+          <td className="py-4 px-6 whitespace-nowrap">
+            <div className="h-6 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
+          </td>
+          <td className="py-4 px-6 whitespace-nowrap">
+            <div className="flex items-center justify-center gap-1.5">
+              {Array.from({ length: 4 }).map((__, btnIdx) => (
+                <div
+                  key={btnIdx}
+                  className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700"
+                />
+              ))}
+            </div>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}
 
 export default function ClientsView({
   searchPlaceholder = "Buscar por cliente, NIT, NRC o teléfono...",
@@ -235,7 +276,10 @@ export default function ClientsView({
       console.error("Error al obtener detalle del cliente:", error);
       showToast(
         "error",
-        getApiErrorMessage(error, "No se pudo cargar el cliente para editarlo."),
+        getApiErrorMessage(
+          error,
+          "No se pudo cargar el cliente para editarlo.",
+        ),
       );
     } finally {
       setLoadingDetail(false);
@@ -273,7 +317,10 @@ export default function ClientsView({
       console.error("Error al obtener detalle del cliente:", error);
       showToast(
         "error",
-        getApiErrorMessage(error, "No se pudo cargar el cliente para editarlo."),
+        getApiErrorMessage(
+          error,
+          "No se pudo cargar el cliente para editarlo.",
+        ),
       );
     } finally {
       setLoadingDetail(false);
@@ -281,10 +328,7 @@ export default function ClientsView({
   };
 
   const handleSaveClient = async (formData: ClientData) => {
-    if (
-      (selectedClientId && !canEdit) ||
-      (!selectedClientId && !canCreate)
-    ) {
+    if ((selectedClientId && !canEdit) || (!selectedClientId && !canCreate)) {
       return;
     }
 
@@ -334,7 +378,10 @@ export default function ClientsView({
       console.error("Error al guardar cliente en BDD:", error);
       showToast(
         "error",
-        getApiErrorMessage(error, "No se pudo guardar la información del cliente."),
+        getApiErrorMessage(
+          error,
+          "No se pudo guardar la información del cliente.",
+        ),
       );
     }
   };
@@ -357,10 +404,7 @@ export default function ClientsView({
       console.error("Error al cambiar estado del cliente:", error);
       showToast(
         "error",
-        getApiErrorMessage(
-          error,
-          "No se pudo cambiar el estado del cliente.",
-        ),
+        getApiErrorMessage(error, "No se pudo cambiar el estado del cliente."),
       );
     } finally {
       setActionLoading(null);
@@ -476,9 +520,7 @@ export default function ClientsView({
         (_, index) => index + 2,
       );
       const remainingResponses = await Promise.all(
-        remainingPages.map((page) =>
-          getCustomers({ ...customerQuery, page }),
-        ),
+        remainingPages.map((page) => getCustomers({ ...customerQuery, page })),
       );
       const dataToExport = [
         ...firstPage.data,
@@ -758,17 +800,7 @@ export default function ClientsView({
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 text-xs sm:text-sm">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2
-                        className="animate-spin text-[#5b642a]"
-                        size={20}
-                      />
-                      <span>Cargando clientes desde el servidor...</span>
-                    </div>
-                  </td>
-                </tr>
+                <ClientsTableSkeleton rows={6} />
               ) : clients.length > 0 ? (
                 clients.map((client) => (
                   <tr

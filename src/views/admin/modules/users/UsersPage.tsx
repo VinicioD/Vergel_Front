@@ -518,9 +518,9 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="w-full flex flex-col gap-6 p-4 sm:p-6 font-sans">
+    <div className="w-full h-[calc(100dvh-5rem)] md:h-[calc(100dvh-3rem)] flex flex-col gap-5 p-4 sm:p-6 font-sans overflow-hidden">
       {/* HEADER DE LA VISTA */}
-      <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
+      <div className="shrink-0 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
             Gestión de Colaboradores
@@ -533,7 +533,7 @@ export default function UsersPage() {
       </div>
 
       {/* FILTROS Y ACCIONES SUPERIORES */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div className="shrink-0 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           {/* Buscador de colaboradores */}
           <div className="relative flex-1 min-w-[240px]">
@@ -585,7 +585,7 @@ export default function UsersPage() {
                 className="fixed inset-0 z-40"
                 onClick={() => setExportOpen(false)}
               />
-              <div className="absolute right-4 mt-2 z-50 w-64 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">
                   Formato
                 </p>
@@ -654,12 +654,12 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* CONTENEDOR DE LA TABLA (CON SCROLL HORIZONTAL EN MÓVIL) */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden transition-colors">
-        <div className="overflow-x-auto">
+      {/* CONTENEDOR DE LA TABLA (SCROLL INTERNO EN TABLA) */}
+      <div className="flex-1 min-h-0 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden flex flex-col transition-colors">
+        <div className="flex-1 min-h-0 overflow-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="bg-gray-50/70 dark:bg-gray-900/50 border-b border-gray-200/60 dark:border-gray-700/60 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gray-50/90 dark:bg-gray-900/90 border-b border-gray-200/60 dark:border-gray-700/60 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <th className="py-4 px-6">CÓDIGO</th>
                 <th className="py-4 px-6">USUARIO</th>
                 <th className="py-4 px-6">ROL</th>
@@ -913,7 +913,7 @@ export default function UsersPage() {
       )}
 
       {/* PAGINACIÓN */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+      <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
         <span className="text-xs text-gray-500 dark:text-gray-400 order-2 sm:order-1">
           Mostrando {visibleUsers.length} de {filteredUsers.length}{" "}
           colaboradores

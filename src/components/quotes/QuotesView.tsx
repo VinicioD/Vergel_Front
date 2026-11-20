@@ -2,14 +2,29 @@
 // Vista reutilizable de cotizaciones. Los datos provienen del API; la navegación
 // a "nueva cotización" la resuelve el rol que monta esta vista.
 import { useEffect, useState } from "react";
-import { Search, Download, Plus, RefreshCw, Loader2, Eye, Edit2, Trash2, X } from "lucide-react";
+import {
+  Search,
+  Download,
+  Plus,
+  RefreshCw,
+  Loader2,
+  Eye,
+  Edit2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import QuotesPdfDocument from "../../pdf/QuotesPdfDocument";
 import Button from "../Button";
 import Input from "../Input";
 import Table, { type Column } from "../Table";
 import SearchableSelect, { type SelectOption } from "../SearchableSelect";
-import { deleteQuote, getQuoteById, getQuotes, getQuoteErrorMessage } from "../../services/quoteService";
+import {
+  deleteQuote,
+  getQuoteById,
+  getQuotes,
+  getQuoteErrorMessage,
+} from "../../services/quoteService";
 import ConfirmDialog from "../ConfirmDialog";
 import type { Quote as ApiQuote, QuoteStatus } from "../../types/quote";
 
@@ -88,42 +103,48 @@ function QuotesTableSkeleton() {
       role="status"
       aria-label="Cargando cotizaciones"
       aria-busy="true"
-      className="w-full overflow-hidden rounded-3xl border border-gray-200/60 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      className="h-full w-full overflow-auto rounded-3xl border border-gray-200/60 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
     >
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-gray-200/40 bg-[#ECE6DB] text-xs font-bold uppercase tracking-wider text-[#3a3d20] dark:border-gray-700 dark:bg-gray-900/90 dark:text-gray-200">
-              {["N° COTIZACIÓN", "CLIENTE", "FECHA", "SERVICIOS", "MONTO", "ESTADO"].map(
-                (header) => (
-                  <th key={header} className="px-6 py-4">
-                    {header}
-                  </th>
-                ),
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 text-sm dark:divide-gray-700/60">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <tr key={index} className="animate-pulse">
-                {Array.from({ length: 6 }).map((__, cellIndex) => (
-                  <td key={cellIndex} className="px-6 py-5">
-                    <div
-                      className={`h-3 rounded-md bg-gray-200 dark:bg-gray-700 ${
-                        cellIndex === 3
-                          ? "w-40"
-                          : cellIndex === 5
-                            ? "h-6 w-20 rounded-full"
-                            : "w-24"
-                      }`}
-                    />
-                  </td>
-                ))}
-              </tr>
+      <table className="w-full min-w-[900px] border-collapse text-left">
+        <thead className="sticky top-0 z-10">
+          <tr className="border-b border-gray-200/40 bg-[#ECE6DB] text-xs font-bold uppercase tracking-wider text-[#3a3d20] dark:border-gray-700 dark:bg-gray-900/90 dark:text-gray-200">
+            {[
+              "N° COTIZACIÓN",
+              "CLIENTE",
+              "FECHA",
+              "SERVICIOS",
+              "MONTO",
+              "ESTADO",
+              "ACCIONES",
+            ].map((header) => (
+              <th key={header} className="px-6 py-4">
+                {header}
+              </th>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100 text-sm dark:divide-gray-700/60">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <tr key={index} className="animate-pulse">
+              {Array.from({ length: 7 }).map((__, cellIndex) => (
+                <td key={cellIndex} className="px-6 py-5">
+                  <div
+                    className={`h-3 rounded-md bg-gray-200 dark:bg-gray-700 ${
+                      cellIndex === 3
+                        ? "w-40"
+                        : cellIndex === 5
+                          ? "h-6 w-20 rounded-full"
+                          : cellIndex === 6
+                            ? "w-20"
+                            : "w-24"
+                    }`}
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -202,7 +223,10 @@ export default function QuotesView({
           setQuotes([]);
           setTotalItems(0);
           setErrorMessage(
-            getQuoteErrorMessage(error, "No se pudieron cargar las cotizaciones."),
+            getQuoteErrorMessage(
+              error,
+              "No se pudieron cargar las cotizaciones.",
+            ),
           );
         }
       } finally {
@@ -276,7 +300,11 @@ export default function QuotesView({
               disabled={loadingEditId !== null}
               className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-[#5b642a] disabled:cursor-wait disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-[#a3b355]"
             >
-              {loadingEditId === item.id ? <Loader2 className="animate-spin" size={17} /> : <Edit2 size={17} />}
+              {loadingEditId === item.id ? (
+                <Loader2 className="animate-spin" size={17} />
+              ) : (
+                <Edit2 size={17} />
+              )}
             </button>
           )}
           <button
@@ -308,7 +336,9 @@ export default function QuotesView({
         setReloadKey((key) => key + 1);
       }
     } catch (error) {
-      setErrorMessage(getQuoteErrorMessage(error, "No se pudo eliminar la cotización."));
+      setErrorMessage(
+        getQuoteErrorMessage(error, "No se pudo eliminar la cotización."),
+      );
       setQuoteToDelete(null);
     } finally {
       setDeleting(false);
@@ -324,7 +354,10 @@ export default function QuotesView({
       onEditQuote(response.data);
     } catch (error) {
       setErrorMessage(
-        getQuoteErrorMessage(error, "No se pudieron cargar los datos de la cotización."),
+        getQuoteErrorMessage(
+          error,
+          "No se pudieron cargar los datos de la cotización.",
+        ),
       );
     } finally {
       setLoadingEditId(null);
@@ -346,8 +379,8 @@ export default function QuotesView({
   };
 
   return (
-    <div className="w-full flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 font-sans bg-transparent">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
+    <div className="w-full h-[calc(100dvh-5rem)] md:h-[calc(100dvh-3rem)] flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 font-sans bg-transparent overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800 shrink-0">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
             {title}
@@ -358,7 +391,7 @@ export default function QuotesView({
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shrink-0">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           <div className="w-full sm:max-w-xs">
             <Input
@@ -412,7 +445,7 @@ export default function QuotesView({
       {errorMessage && (
         <div
           role="alert"
-          className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300"
+          className="shrink-0 flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300"
         >
           <span>{errorMessage}</span>
           <button
@@ -426,12 +459,15 @@ export default function QuotesView({
       )}
 
       {successMessage && (
-        <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+        <div
+          role="status"
+          className="shrink-0 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+        >
           {successMessage}
         </div>
       )}
 
-      <div className="w-full overflow-x-auto rounded-lg">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {loading ? (
           <QuotesTableSkeleton />
         ) : (
@@ -466,49 +502,123 @@ export default function QuotesView({
             if (event.target === event.currentTarget) setSelectedQuote(null);
           }}
         >
-          <section role="dialog" aria-modal="true" aria-labelledby="quote-details-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-gray-100 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:p-7">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quote-details-title"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-gray-100 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:p-7"
+          >
             <header className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h2 id="quote-details-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">Cotización {selectedQuote.code}</h2>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Detalle de la cotización</p>
+                <h2
+                  id="quote-details-title"
+                  className="text-xl font-bold text-gray-900 dark:text-gray-100"
+                >
+                  Cotización {selectedQuote.code}
+                </h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Detalle de la cotización
+                </p>
               </div>
-              <button type="button" aria-label="Cerrar detalle" onClick={() => setSelectedQuote(null)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200">
+              <button
+                type="button"
+                aria-label="Cerrar detalle"
+                onClick={() => setSelectedQuote(null)}
+                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+              >
                 <X size={19} />
               </button>
             </header>
 
             <dl className="grid grid-cols-1 gap-4 rounded-2xl bg-gray-50 p-4 text-sm dark:bg-gray-900/50 sm:grid-cols-2">
-              <div><dt className="text-gray-500 dark:text-gray-400">Cliente</dt><dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedQuote.customerName || "Sin cliente"}</dd></div>
-              <div><dt className="text-gray-500 dark:text-gray-400">Plan</dt><dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedQuote.planName || "—"}</dd></div>
-              <div><dt className="text-gray-500 dark:text-gray-400">Fecha</dt><dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{formatDate(selectedQuote.createdAt)}</dd></div>
-              <div><dt className="text-gray-500 dark:text-gray-400">Estado</dt><dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedQuote.status === "paid" ? "Pagada" : "Pendiente"}</dd></div>
+              <div>
+                <dt className="text-gray-500 dark:text-gray-400">Cliente</dt>
+                <dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                  {selectedQuote.customerName || "Sin cliente"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-gray-500 dark:text-gray-400">Plan</dt>
+                <dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                  {selectedQuote.planName || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-gray-500 dark:text-gray-400">Fecha</dt>
+                <dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                  {formatDate(selectedQuote.createdAt)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-gray-500 dark:text-gray-400">Estado</dt>
+                <dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                  {selectedQuote.status === "paid" ? "Pagada" : "Pendiente"}
+                </dd>
+              </div>
             </dl>
 
-            <h3 className="mb-3 mt-6 text-sm font-bold text-gray-900 dark:text-gray-100">Ítems</h3>
+            <h3 className="mb-3 mt-6 text-sm font-bold text-gray-900 dark:text-gray-100">
+              Ítems
+            </h3>
             <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
-                  <tr><th className="px-4 py-3">Descripción</th><th className="px-4 py-3">Cant.</th><th className="px-4 py-3">Precio</th><th className="px-4 py-3">Total</th></tr>
+                  <tr>
+                    <th className="px-4 py-3">Descripción</th>
+                    <th className="px-4 py-3">Cant.</th>
+                    <th className="px-4 py-3">Precio</th>
+                    <th className="px-4 py-3">Total</th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {selectedQuote.items.map((item, index) => (
                     <tr key={item.id ?? `${item.name ?? "item"}-${index}`}>
-                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{item.name || (item.itemType === "plant" ? "Planta" : "Servicio")}</td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.quantity}</td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{formatCurrency(item.unitPrice)}</td>
-                      <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item.total)}</td>
+                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
+                        {item.name ||
+                          (item.itemType === "plant" ? "Planta" : "Servicio")}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {item.quantity}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {formatCurrency(item.unitPrice)}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">
+                        {formatCurrency(item.total)}
+                      </td>
                     </tr>
                   ))}
-                  {selectedQuote.items.length === 0 && <tr><td colSpan={4} className="px-4 py-5 text-center text-gray-500">Sin ítems registrados.</td></tr>}
+                  {selectedQuote.items.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-4 py-5 text-center text-gray-500"
+                      >
+                        Sin ítems registrados.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
 
             <dl className="ml-auto mt-5 w-full max-w-xs space-y-2 text-sm">
-              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300"><dt>Subtotal</dt><dd>{formatCurrency(selectedQuote.subtotal)}</dd></div>
-              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300"><dt>Descuento</dt><dd>{formatCurrency(selectedQuote.discountAmount)}</dd></div>
-              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300"><dt>IVA</dt><dd>{formatCurrency(selectedQuote.vatAmount)}</dd></div>
-              <div className="flex justify-between gap-4 border-t border-gray-200 pt-2 text-base font-bold text-gray-900 dark:border-gray-700 dark:text-gray-100"><dt>Total</dt><dd>{formatCurrency(selectedQuote.total)}</dd></div>
+              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300">
+                <dt>Subtotal</dt>
+                <dd>{formatCurrency(selectedQuote.subtotal)}</dd>
+              </div>
+              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300">
+                <dt>Descuento</dt>
+                <dd>{formatCurrency(selectedQuote.discountAmount)}</dd>
+              </div>
+              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300">
+                <dt>IVA</dt>
+                <dd>{formatCurrency(selectedQuote.vatAmount)}</dd>
+              </div>
+              <div className="flex justify-between gap-4 border-t border-gray-200 pt-2 text-base font-bold text-gray-900 dark:border-gray-700 dark:text-gray-100">
+                <dt>Total</dt>
+                <dd>{formatCurrency(selectedQuote.total)}</dd>
+              </div>
             </dl>
           </section>
         </div>
@@ -522,7 +632,9 @@ export default function QuotesView({
         cancelText="Cancelar"
         loading={deleting}
         onConfirm={() => void handleDeleteQuote()}
-        onCancel={() => { if (!deleting) setQuoteToDelete(null); }}
+        onCancel={() => {
+          if (!deleting) setQuoteToDelete(null);
+        }}
       />
     </div>
   );

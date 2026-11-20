@@ -50,6 +50,19 @@ export default function AppointmentFormPage() {
 
   const backToAgenda = () => navigate("/admin/schedule", { replace: true });
 
+  const backToAgendaWithSuccess = () =>
+    navigate("/admin/schedule", {
+      replace: true,
+      state: {
+        toast: {
+          type: "success",
+          message: isEditing
+            ? "Cita actualizada correctamente."
+            : "Cita agendada correctamente.",
+        },
+      },
+    });
+
   useEffect(() => {
     if (!id) return;
 
@@ -105,7 +118,7 @@ export default function AppointmentFormPage() {
         await createAppointment(payload);
       }
 
-      backToAgenda();
+      backToAgendaWithSuccess();
     } catch (error) {
       console.error("Error al guardar la cita:", error);
       setErrorMessage(

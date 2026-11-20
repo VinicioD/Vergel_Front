@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Loader2, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
 import Button from "../../../../components/Button";
 import Input from "../../../../components/Input";
 import SearchableSelect, { type SelectOption } from "../../../../components/SearchableSelect";
@@ -213,40 +213,30 @@ export default function QuoteForm({ onClose, onSaved, initialData }: QuoteFormPr
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !saving) onClose();
-      }}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="quote-form-title"
-        className="flex max-h-[96dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-gray-100 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:max-w-5xl sm:rounded-3xl"
-      >
-        <header className="flex items-center justify-between gap-3 border-b border-gray-100 p-4 dark:border-gray-700 sm:p-6">
-          <div>
-            <h2 id="quote-form-title" className="text-lg font-bold text-gray-900 dark:text-gray-100 sm:text-xl">
-              {initialData ? `Editar cotización ${initialData.code}` : "Nueva cotización"}
-            </h2>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
-              Puedes actualizar los datos y conservar los servicios existentes. Los nuevos ítems deben ser plantas registradas.
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label="Cerrar formulario"
-            disabled={saving}
-            onClick={onClose}
-            className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-          >
-            <X size={20} />
-          </button>
-        </header>
+    <div className="min-h-screen w-full bg-transparent dark:bg-gray-900 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
+      <div className="flex items-center gap-4 mb-6 max-w-4xl mx-auto">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={saving}
+          className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+          title="Volver al listado"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#2A3319] dark:text-gray-100">
+            {initialData ? `Editar Cotización ${initialData.code}` : "Agregar Nueva Cotización"}
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Puedes actualizar los datos y conservar los servicios existentes. Los nuevos ítems deben ser plantas registradas.
+          </p>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="w-full max-w-4xl bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-300 mx-auto">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+          <div className="flex flex-col">
             {errorMessage && (
               <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
                 {errorMessage}
@@ -258,10 +248,10 @@ export default function QuoteForm({ onClose, onSaved, initialData }: QuoteFormPr
                 <Loader2 className="mr-2 animate-spin" size={22} /> Cargando datos...
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Cliente <span className="text-rose-500">*</span>
                     </label>
                     <SearchableSelect
@@ -275,7 +265,7 @@ export default function QuoteForm({ onClose, onSaved, initialData }: QuoteFormPr
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Plan aplicado <span className="text-rose-500">*</span>
                     </label>
                     <SearchableSelect
@@ -288,8 +278,8 @@ export default function QuoteForm({ onClose, onSaved, initialData }: QuoteFormPr
                     {errors.planId && <p className="mt-1 text-xs text-rose-500">{errors.planId}</p>}
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Puntos usados</label>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Puntos usados</label>
                     <Input
                       type="text"
                       inputMode="numeric"
@@ -301,7 +291,7 @@ export default function QuoteForm({ onClose, onSaved, initialData }: QuoteFormPr
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-200">Estado</label>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
                     <SearchableSelect
                       options={[{ label: "Pendiente", value: "pending" }, { label: "Pagada", value: "paid" }]}
                       value={status}
@@ -399,16 +389,27 @@ export default function QuoteForm({ onClose, onSaved, initialData }: QuoteFormPr
             )}
           </div>
 
-          <footer className="flex flex-col-reverse gap-3 border-t border-gray-100 p-4 dark:border-gray-700 sm:flex-row sm:justify-end sm:p-6">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="w-full sm:w-auto">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <Button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              style={{ backgroundColor: "#CCC", color: "#333" }}
+              className="w-full sm:w-auto"
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || saving} className="w-full sm:w-auto">
-              {saving ? "Guardando..." : initialData ? "Guardar cambios" : "Registrar cotización"}
+            <Button
+              type="submit"
+              disabled={loading || saving}
+              style={{ backgroundColor: "#6C7D38", color: "#FFF" }}
+              className="w-full sm:w-auto"
+            >
+              {saving ? "Guardando..." : initialData ? "Guardar Cambios" : "Guardar Cotización"}
             </Button>
-          </footer>
+          </div>
         </form>
-      </section>
+      </div>
     </div>
   );
 }

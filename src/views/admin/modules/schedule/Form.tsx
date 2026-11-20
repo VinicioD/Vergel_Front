@@ -12,6 +12,7 @@ import Button from "../../../../components/Button";
 import SearchableSelect, {
   type SelectOption,
 } from "../../../../components/SearchableSelect";
+import { APP_ROLES, normalizeRoleName } from "../../../../config/roles";
 import { getCustomers } from "../../../../services/customerService";
 import { getEmployees } from "../../../../services/employeeService";
 import type { CustomerListItem } from "../../../../types/customer";
@@ -172,9 +173,15 @@ export const Form = ({
   }));
 
   const employeeOptions: SelectOption[] = employees
-    .filter(
-      (employee) => employee.active || employee.id === formData.employee_id,
-    )
+    .filter((employee) => {
+      const esTecnico =
+        normalizeRoleName(employee.roleName || employee.role || "") ===
+        APP_ROLES.technical;
+      return (
+        esTecnico &&
+        (employee.active || employee.id === formData.employee_id)
+      );
+    })
     .map((employee) => ({
       label: employee.roleName
         ? `${employee.fullName} · ${employee.roleName}`

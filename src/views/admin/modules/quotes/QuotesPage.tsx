@@ -16,6 +16,27 @@ export default function QuotesPage() {
     setToast({ message: "Cotización guardada con éxito.", type: "success" });
   }, []);
 
+  if (formOpen) {
+    return (
+      <>
+        <QuoteForm
+          initialData={editingQuote}
+          onClose={() => {
+            setFormOpen(false);
+            setEditingQuote(null);
+          }}
+          onSaved={handleSave}
+        />
+        <Toast
+          type={toast?.type ?? "info"}
+          message={toast?.message ?? ""}
+          isOpen={toast !== null}
+          onClose={() => setToast(null)}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <QuotesView
@@ -29,16 +50,6 @@ export default function QuotesPage() {
           setFormOpen(true);
         }}
       />
-      {formOpen && (
-        <QuoteForm
-          initialData={editingQuote}
-          onClose={() => {
-            setFormOpen(false);
-            setEditingQuote(null);
-          }}
-          onSaved={handleSave}
-        />
-      )}
       <Toast
         type={toast?.type ?? "info"}
         message={toast?.message ?? ""}

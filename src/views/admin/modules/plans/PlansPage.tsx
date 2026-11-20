@@ -25,6 +25,68 @@ import type {
 import Form from "./Form";
 import Input from "../../../../components/Input";
 import SearchableSelect from "../../../../components/SearchableSelect";
+import Toast, { type ToastType } from "../../../../components/alerts/Toast";
+import ConfirmDialog from "../../../../components/alerts/ConfirmDialog";
+
+function PlanCardSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Cargando plan de suscripción"
+      aria-busy="true"
+      className="flex flex-col overflow-hidden rounded-3xl border border-[#E4E8D9] bg-white shadow-[0_8px_30px_rgba(42,51,25,0.06)] dark:border-gray-700 dark:bg-gray-800 animate-pulse"
+    >
+      <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700" />
+
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-2.5 w-28 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-6 w-44 rounded-md bg-gray-200 dark:bg-gray-700" />
+            <div className="h-5 w-24 rounded-lg bg-gray-100 dark:bg-gray-700/70" />
+          </div>
+          <div className="h-7 w-16 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
+        </div>
+
+        <div className="mt-5 flex items-center gap-2">
+          <div className="h-7 w-7 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-700/70" />
+          <div className="h-3.5 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-[#ECEFE5] bg-[#F8F9F5] p-3.5 dark:border-gray-700 dark:bg-gray-900/50 space-y-2">
+            <div className="h-2.5 w-20 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-7 w-12 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-3 w-24 rounded bg-gray-100 dark:bg-gray-700/70" />
+          </div>
+          <div className="rounded-2xl border border-[#ECEFE5] bg-[#F8F9F5] p-3.5 dark:border-gray-700 dark:bg-gray-900/50 space-y-2">
+            <div className="h-2.5 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-7 w-14 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-3 w-24 rounded bg-gray-100 dark:bg-gray-700/70" />
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3 rounded-2xl border border-gray-100 p-4 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="h-3.5 w-20 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-3.5 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+          </div>
+          <div className="h-px bg-gray-100 dark:bg-gray-700" />
+          <div className="flex items-center justify-between">
+            <div className="h-3.5 w-28 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-6 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+          </div>
+        </div>
+
+        <div className="mt-auto flex items-center gap-2 pt-6">
+          <div className="h-11 flex-1 rounded-xl bg-gray-200 dark:bg-gray-700" />
+          <div className="h-11 w-11 shrink-0 rounded-xl bg-gray-200 dark:bg-gray-700" />
+          <div className="h-11 w-11 shrink-0 rounded-xl bg-gray-200 dark:bg-gray-700" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -40,6 +102,14 @@ export default function PlansPage() {
   const [viewPlan, setViewPlan] = useState<SubscriptionPlan | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loadingSubscribers, setLoadingSubscribers] = useState<boolean>(false);
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    message: string;
+  } | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<SubscriptionPlan | null>(
+    null,
+  );
+  const [deleting, setDeleting] = useState(false);
 
   // Opciones para el SearchableSelect de Estado
   const statusOptions = [
@@ -55,6 +125,18 @@ export default function PlansPage() {
     { label: "Semanas (weeks)", value: "weeks" },
     { label: "Meses (months)", value: "months" },
   ];
+
+  const showToast = (type: ToastType, message: string) =>
+    setToast({ type, message });
+
+  const toastElement = (
+    <Toast
+      type={toast?.type ?? "info"}
+      message={toast?.message ?? ""}
+      isOpen={toast !== null}
+      onClose={() => setToast(null)}
+    />
+  );
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -107,20 +189,27 @@ export default function PlansPage() {
     return () => window.clearTimeout(timeoutId);
   }, [fetchPlans]);
 
-  // Manejar eliminación de plan (con control de errores por si tiene suscriptores)
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este plan?"))
-      return;
+  const handleDelete = (plan: SubscriptionPlan) => {
+    setPlanToDelete(plan);
+  };
 
+  const confirmDelete = async () => {
+    if (!planToDelete) return;
+
+    setDeleting(true);
     try {
-      await deleteSubscriptionPlan(id);
+      await deleteSubscriptionPlan(planToDelete.id);
+      setPlanToDelete(null);
       setLoading(true);
-      fetchPlans(); // Recargar lista
+      void fetchPlans();
+      showToast("success", "Plan eliminado correctamente.");
     } catch (error: unknown) {
       const message = isAxiosError<{ message?: string }>(error)
         ? error.response?.data?.message || "No se pudo eliminar el plan."
         : "No se pudo eliminar el plan.";
-      alert(message);
+      showToast("error", message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -132,10 +221,16 @@ export default function PlansPage() {
     try {
       await toggleSubscriptionPlanStatus(id, !currentActiveState);
       setLoading(true);
-      fetchPlans();
+      void fetchPlans();
+      showToast(
+        "success",
+        currentActiveState
+          ? "Plan desactivado correctamente."
+          : "Plan activado correctamente.",
+      );
     } catch (error: unknown) {
       console.error("Error al cambiar el estado del plan:", error);
-      alert("Error al cambiar el estado del plan.");
+      showToast("error", "Error al cambiar el estado del plan.");
     }
   };
 
@@ -169,19 +264,28 @@ export default function PlansPage() {
   // Mostrar el formulario como una página independiente
   if (isModalOpen) {
     return (
-      <Form
-        selectedPlan={selectedPlan}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedPlan(null);
-        }}
-        onSave={() => {
-          setIsModalOpen(false);
-          setSelectedPlan(null);
-          setLoading(true);
-          fetchPlans();
-        }}
-      />
+      <>
+        <Form
+          selectedPlan={selectedPlan}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedPlan(null);
+          }}
+          onSave={() => {
+            setIsModalOpen(false);
+            setSelectedPlan(null);
+            setLoading(true);
+            void fetchPlans();
+            showToast(
+              "success",
+              selectedPlan
+                ? "Plan actualizado correctamente."
+                : "Plan agregado correctamente.",
+            );
+          }}
+        />
+        {toastElement}
+      </>
     );
   }
 
@@ -251,8 +355,10 @@ export default function PlansPage() {
 
       {/* Grid de Tarjetas de Planes */}
       {loading ? (
-        <div className="py-12 text-center text-gray-400">
-          Cargando planes...
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <PlanCardSkeleton key={index} />
+          ))}
         </div>
       ) : plans.length === 0 ? (
         <div className="py-12 text-center text-gray-400">
@@ -406,7 +512,7 @@ export default function PlansPage() {
 
                   <button
                     type="button"
-                    onClick={() => handleDelete(plan.id)}
+                    onClick={() => handleDelete(plan)}
                     className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-red-900 dark:hover:bg-red-950/30 dark:hover:text-red-400 cursor-pointer"
                     title="Eliminar plan"
                     aria-label={`Eliminar ${plan.planName}`}
@@ -585,6 +691,20 @@ export default function PlansPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={planToDelete !== null}
+        title="¿Eliminar plan?"
+        message={`Se eliminará el plan ${
+          planToDelete?.planName || "seleccionado"
+        }. Esta acción no se puede deshacer.`}
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        isLoading={deleting}
+        onConfirm={() => void confirmDelete()}
+        onClose={() => setPlanToDelete(null)}
+      />
+      {toastElement}
     </div>
   );
 }

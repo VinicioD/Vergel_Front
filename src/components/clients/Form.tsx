@@ -7,6 +7,10 @@ import { ArrowLeft } from "lucide-react";
 import type { CreateCustomerPayload } from "../../services/customerService";
 import { getSubscriptionPlans } from "../../services/subscriptionPlanService";
 import type { SubscriptionPlan } from "../../types/customer";
+import {
+  departamentoOptions,
+  MUNICIPIOS_POR_DEPARTAMENTO,
+} from "./catalogoUbicacion";
 
 export interface ClientData extends CreateCustomerPayload {
   id?: number;
@@ -23,6 +27,21 @@ const NIT_REGEX = /^\d{4}-\d{6}-\d{3}-\d{1}$/;
 const NRC_REGEX = /^\d{6}-\d{1,2}$/;
 const PHONE_REGEX = /^\d{4}-\d{4}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const ACTIVIDADES_ECONOMICAS = [
+  "A: Agricultura, ganadería, silvicultura y pesca",
+  "B: Explotación de minas y canteras",
+  "C: Industrias manufactureras",
+  "D - E: Suministro de electricidad, gas, agua y gestión de desechos",
+  "F: Construcción",
+  "G: Comercio al por mayor y al por menor; reparación de vehículos",
+  "H: Transporte y almacenamiento",
+  "I: Alojamiento y servicios de comida (hoteles y restaurantes)",
+  "J: Información y comunicaciones",
+  "K - N: Actividades financieras, inmobiliarias, profesionales, científicas y administrativas",
+  "O - S: Administración pública, enseñanza, salud, arte y otros servicios",
+  "Códigos especiales: Personas naturales no contribuyentes (empleados, estudiantes, etc.)",
+];
 
 const onlyDigits = (value: string, max: number) =>
   value.replace(/\D/g, "").slice(0, max);
@@ -60,8 +79,8 @@ const buildFormData = (data?: ClientData | null): ClientData => ({
       : data?.nrc || "",
   economic_activity: data?.economic_activity || "",
   address: data?.address || "",
-  department: data?.department || "San Salvador",
-  municipality: data?.municipality || "San Salvador",
+  department: data?.department || "",
+  municipality: data?.municipality || "",
   phone:
     data?.phone && onlyDigits(data.phone, 99).length === 8
       ? formatPhone(data.phone)
@@ -135,6 +154,35 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
     label: plan.planName || `Plan ${plan.id}`,
     value: String(plan.id),
   }));
+
+  const actividadEconomicaOptions: SelectOption[] =
+    ACTIVIDADES_ECONOMICAS.map((actividad) => ({
+      label: actividad,
+      value: actividad,
+    }));
+  const actividadActual = formData.economic_activity?.trim();
+  if (actividadActual && !ACTIVIDADES_ECONOMICAS.includes(actividadActual)) {
+    actividadEconomicaOptions.unshift({
+      label: actividadActual,
+      value: actividadActual,
+      description: "Actividad registrada anteriormente",
+    });
+  }
+
+  const municipios =
+    MUNICIPIOS_POR_DEPARTAMENTO[formData.department || ""] ?? [];
+  const municipioOptions: SelectOption[] = municipios.map((municipio) => ({
+    label: municipio,
+    value: municipio,
+  }));
+  const municipioActual = formData.municipality?.trim();
+  if (municipioActual && !municipios.includes(municipioActual)) {
+    municipioOptions.unshift({
+      label: municipioActual,
+      value: municipioActual,
+      description: "Municipio registrado anteriormente",
+    });
+  }
 
   const clearError = (field: string) =>
     setErrors((prev) => {
@@ -306,13 +354,14 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
             <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
               Actividad Económica
             </label>
-            <Input
-              type="text"
-              placeholder="Venta de servicios / Comercio"
+            <SearchableSelect
+              options={actividadEconomicaOptions}
               value={formData.economic_activity || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setFormData({ ...formData, economic_activity: e.target.value })
-              }
+              onChange={(value) => {
+                setFormData({ ...formData, economic_activity: value });
+              }}
+              placeholder="Selecciona una actividad económica"
+              className="max-w-none"
             />
           </div>
 
@@ -322,34 +371,51 @@ export const Form: React.FC<FormProps> = ({ onClose, onSave, initialData }) => {
               <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                 Departamento *
               </label>
-              <Input
-                type="text"
-                required
-                placeholder="San Salvador"
+              <SearchableSelect
+                options={departamentoOptions}
                 value={formData.department || ""}
-                error={errors.department}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setFormData({ ...formData, department: e.target.value });
+                onChange={(value) => {
+                  setFormData({
+                    ...formData,
+                    department: value,
+                    municipality: "",
+                  });
                   clearError("department");
+                  clearError("municipality");
                 }}
+                placeholder="Selecciona un departamento"
+                className="max-w-none"
               />
+              {errors.department && (
+                <span className="text-xs text-red-500 dark:text-red-400 mt-0.5">
+                  {errors.department}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-col gap-1">
               <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                 Municipio *
               </label>
-              <Input
-                type="text"
-                required
-                placeholder="San Salvador"
-                value={formData.municipality}
-                error={errors.municipality}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setFormData({ ...formData, municipality: e.target.value });
+              <SearchableSelect
+                options={municipioOptions}
+                value={formData.municipality || ""}
+                onChange={(value) => {
+                  setFormData({ ...formData, municipality: value });
                   clearError("municipality");
                 }}
+                placeholder={
+                  formData.department
+                    ? "Selecciona un municipio"
+                    : "Selecciona primero un departamento"
+                }
+                className="max-w-none"
               />
+              {errors.municipality && (
+                <span className="text-xs text-red-500 dark:text-red-400 mt-0.5">
+                  {errors.municipality}
+                </span>
+              )}
             </div>
           </div>
 
