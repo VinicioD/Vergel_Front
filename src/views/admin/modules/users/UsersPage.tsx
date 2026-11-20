@@ -30,6 +30,12 @@ import type {
   CreateEmployeePayload,
 } from "../../../../types/employee";
 import UserForm from "./Form";
+import { pdf } from "@react-pdf/renderer";
+import {
+  ReportPdfDocument,
+  type ReportPdfRow,
+} from "../../../../pdf/ReportPdfDocument";
+import { triggerPdfDownload } from "../../../../pdf/downloadPdf";
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (!isAxiosError(error)) return fallback;
@@ -305,50 +311,37 @@ export default function UsersPage() {
     }
   };
 
-  const handleDownload = (user: User) => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      showToast(
-        "error",
-        "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
-      );
-      return;
-    }
-    const escapeHtml = (value: string) =>
-      value
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+  const handleDownload = async (user: User) => {
+    const rows: ReportPdfRow[] = [
+      { cells: ["Código", user.code] },
+      { cells: ["Nombre", user.name] },
+      { cells: ["Correo", user.email] },
+      { cells: ["Rol", user.role] },
+      { cells: ["Estado", user.status] },
+      { cells: ["Fecha de registro", user.joinedDate] },
+      { cells: ["DUI", user.dui || "No registrado"] },
+      { cells: ["Fecha de contratación", user.hireDate || "No registrada"] },
+      { cells: ["Departamento", user.department || "No registrado"] },
+      { cells: ["Municipio", user.municipality || "No registrado"] },
+      { cells: ["Dirección", user.address || "No registrada"] },
+    ];
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="es">
-        <head>
-          <title>Ficha de ${escapeHtml(user.name)}</title>
-          <style>
-            body { font-family: system-ui, sans-serif; padding: 32px; color: #1f2937; }
-            dl { display: grid; grid-template-columns: 180px 1fr; gap: 12px; }
-            dt { font-weight: 700; } dd { margin: 0; }
-          </style>
-        </head>
-        <body>
-          <h1>Ficha del colaborador</h1>
-          <dl>
-            <dt>Código</dt><dd>${escapeHtml(user.code)}</dd>
-            <dt>Nombre</dt><dd>${escapeHtml(user.name)}</dd>
-            <dt>Correo</dt><dd>${escapeHtml(user.email)}</dd>
-            <dt>Rol</dt><dd>${escapeHtml(user.role)}</dd>
-            <dt>Estado</dt><dd>${escapeHtml(user.status)}</dd>
-            <dt>Fecha de registro</dt><dd>${escapeHtml(user.joinedDate)}</dd>
-          </dl>
-          <script>window.onload = function() { window.print(); window.close(); };</script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    showToast("info", "Ficha del colaborador generada correctamente");
+    const pdfBlob = await pdf(
+      <ReportPdfDocument
+        reportTitle="Ficha del Colaborador"
+        subtitle={user.name}
+        dateRangeLabel={`Colaborador ${user.code}`}
+        headers={["Campo", "Detalle"]}
+        rows={rows}
+        orientation="portrait"
+      />,
+    ).toBlob();
+
+    triggerPdfDownload(
+      pdfBlob,
+      `Colaborador_${user.code}_${new Date().toISOString().slice(0, 10)}.pdf`,
+    );
+    showToast("success", "Ficha del colaborador generada correctamente");
   };
 
   const roleOptions = useMemo<SelectOption[]>(() => {
@@ -377,7 +370,7 @@ export default function UsersPage() {
     [searchTerm, selectedRole, users],
   );
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const dataToExport =
       exportScope === "ALL"
         ? users
@@ -420,59 +413,38 @@ export default function UsersPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } else {
-      const escapeHtml = (value: string) =>
-        value
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        showToast(
-          "error",
-          "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
-        );
-        return;
-      }
+      const rows: ReportPdfRow[] = dataToExport.map((user) => ({
+        cells: [
+          user.code,
+          `${user.name} / ${user.email}`,
+          user.role,
+          user.status,
+          user.joinedDate,
+        ],
+      }));
 
-      const tableRows = dataToExport
-        .map(
-          (user) => `
-            <tr>
-              <td>${escapeHtml(user.code)}</td>
-              <td><b>${escapeHtml(user.name)}</b><br><small>${escapeHtml(user.email)}</small></td>
-              <td>${escapeHtml(user.role)}</td>
-              <td>${escapeHtml(user.status)}</td>
-              <td>${escapeHtml(user.joinedDate)}</td>
-            </tr>`,
-        )
-        .join("");
+      const pdfBlob = await pdf(
+        <ReportPdfDocument
+          reportTitle="Reporte de Colaboradores"
+          subtitle={`Alcance: ${
+            exportScope === "ALL" ? "Todos" : exportScope
+          }`}
+          dateRangeLabel={new Date().toLocaleDateString("es-SV")}
+          headers={[
+            "Código",
+            "Colaborador",
+            "Rol",
+            "Estado",
+            "Fecha de registro",
+          ]}
+          rows={rows}
+        />,
+      ).toBlob();
 
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="es">
-          <head>
-            <title>Reporte de Colaboradores (${escapeHtml(exportScope)})</title>
-            <style>
-              body { font-family: system-ui, sans-serif; padding: 20px; }
-              table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-              th, td { padding: 8px; border-bottom: 1px solid #eee; }
-              th { background: #f3f4f6; border-bottom: 2px solid #ccc; }
-            </style>
-          </head>
-          <body>
-            <h2>Reporte de Colaboradores (${escapeHtml(exportScope.toUpperCase())})</h2>
-            <p>Fecha: ${new Date().toLocaleDateString("es-SV")}</p>
-            <table>
-              <thead><tr><th>Código</th><th>Colaborador</th><th>Rol</th><th>Estado</th><th>Fecha de registro</th></tr></thead>
-              <tbody>${tableRows}</tbody>
-            </table>
-            <script>window.onload = function() { window.print(); window.close(); };</script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+      triggerPdfDownload(
+        pdfBlob,
+        `Colaboradores_${exportScope}_${new Date().toISOString().slice(0, 10)}.pdf`,
+      );
     }
 
     setExportOpen(false);

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import QuotesPdfDocument from "../../pdf/QuotesPdfDocument";
+import { triggerPdfDownload } from "../../pdf/downloadPdf";
 import Button from "../Button";
 import Input from "../Input";
 import Table, { type Column } from "../Table";
@@ -47,6 +48,11 @@ export interface QuotesViewProps {
   searchPlaceholder?: string;
   onNewQuote?: () => void;
   onEditQuote?: (quote: ApiQuote) => void;
+  onChangeStatus?: (
+    quoteId: number | string,
+    status: QuoteStatus,
+  ) => void | Promise<void>;
+  onDeleteQuote?: (quoteId: number | string) => void | Promise<void>;
 }
 
 const STATUS_OPTIONS: SelectOption[] = [
@@ -80,17 +86,29 @@ const formatDate = (value: string) => {
 };
 
 const toViewQuote = (quote: ApiQuote): Quote => {
-  const services = quote.items
-    .map((item) => item.name)
-    .filter((name): name is string => Boolean(name))
-    .join(", ");
+  const itemNames = quote.items
+    .map(
+      (item) =>
+        item.name ||
+        item.plant?.name ||
+        item.service?.name ||
+        (item.itemType === "plant" ? "Planta" : "Servicio"),
+    )
+    .filter(Boolean);
+
+  const servicesLabel =
+    itemNames.length > 0
+      ? itemNames.join(", ")
+      : quote.itemsCount > 0
+        ? `${quote.itemsCount} ${quote.itemsCount === 1 ? "ítem" : "ítems"}`
+        : "Sin ítems";
 
   return {
     id: quote.id,
-    code: quote.code || `COT-${quote.id}`,
+    code: quote.quoteNumber || `COT-${quote.id}`,
     client: quote.customerName || "Sin cliente",
     date: formatDate(quote.createdAt),
-    services: services || "Sin ítems",
+    services: servicesLabel,
     amount: formatCurrency(quote.total),
     status: quote.status === "paid" ? "Aprobada" : "Pendiente",
     details: quote,
@@ -164,14 +182,10 @@ const downloadQuotesPdf = async (quotes: Quote[], title: string) => {
     />,
   ).toBlob();
 
-  const url = URL.createObjectURL(pdfBlob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `cotizaciones-${new Date().toISOString().slice(0, 10)}.pdf`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+  triggerPdfDownload(
+    pdfBlob,
+    `cotizaciones-${new Date().toISOString().slice(0, 10)}.pdf`,
+  );
 };
 
 export default function QuotesView({
@@ -180,6 +194,8 @@ export default function QuotesView({
   searchPlaceholder = "Buscar cliente o servicio...",
   onNewQuote,
   onEditQuote,
+  onChangeStatus,
+  onDeleteQuote,
 }: QuotesViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -191,6 +207,8 @@ export default function QuotesView({
   const [errorMessage, setErrorMessage] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedQuote, setSelectedQuote] = useState<ApiQuote | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -207,6 +225,7 @@ export default function QuotesView({
         const response = await getQuotes({
           page: currentPage,
           per_page: 10,
+          limit: 10,
           search: searchTerm.trim() || undefined,
           status:
             statusFilter === "pending" || statusFilter === "paid"
@@ -240,6 +259,37 @@ export default function QuotesView({
       window.clearTimeout(timeoutId);
     };
   }, [currentPage, reloadKey, searchTerm, statusFilter]);
+
+  const handleOpenDetail = async (quote: Quote) => {
+    setSelectedQuote(quote.details);
+    setLoadingDetail(true);
+    try {
+      const { data } = await getQuoteById(quote.id);
+      setSelectedQuote(data);
+    } catch {
+      // Si falla la carga detallada, conserva los datos del listado
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const handleToggleStatus = async (quote: ApiQuote) => {
+    if (!onChangeStatus) return;
+    const nextStatus: QuoteStatus =
+      quote.status === "paid" ? "pending" : "paid";
+    setUpdatingStatus(true);
+    try {
+      await onChangeStatus(quote.id, nextStatus);
+      setSelectedQuote((current) =>
+        current && current.id === quote.id
+          ? { ...current, status: nextStatus }
+          : current,
+      );
+      setReloadKey((key) => key + 1);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const columns: Column<Quote>[] = [
     {
@@ -286,7 +336,7 @@ export default function QuotesView({
             type="button"
             title="Ver cotización"
             aria-label={`Ver cotización ${item.code}`}
-            onClick={() => setSelectedQuote(item.details)}
+            onClick={() => void handleOpenDetail(item)}
             className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-[#5b642a] dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-[#a3b355]"
           >
             <Eye size={17} />
@@ -327,9 +377,13 @@ export default function QuotesView({
     setErrorMessage("");
     setSuccessMessage("");
     try {
-      await deleteQuote(quoteToDelete.id);
+      if (onDeleteQuote) {
+        await onDeleteQuote(quoteToDelete.id);
+      } else {
+        await deleteQuote(quoteToDelete.id);
+        setSuccessMessage(`La cotización ${quoteToDelete.code} fue eliminada.`);
+      }
       setQuoteToDelete(null);
-      setSuccessMessage(`La cotización ${quoteToDelete.code} fue eliminada.`);
       if (quotes.length === 1 && currentPage > 1) {
         setCurrentPage((page) => page - 1);
       } else {
@@ -377,6 +431,13 @@ export default function QuotesView({
       setDownloadingPdf(false);
     }
   };
+
+  const discountAmount = selectedQuote
+    ? Math.max(0, selectedQuote.basePrice - selectedQuote.discountedSubtotal)
+    : 0;
+  const vatAmount = selectedQuote
+    ? Math.max(0, selectedQuote.total - selectedQuote.discountedSubtotal)
+    : 0;
 
   return (
     <div className="w-full h-[calc(100dvh-5rem)] md:h-[calc(100dvh-3rem)] flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 font-sans bg-transparent overflow-hidden">
@@ -514,10 +575,13 @@ export default function QuotesView({
                   id="quote-details-title"
                   className="text-xl font-bold text-gray-900 dark:text-gray-100"
                 >
-                  Cotización {selectedQuote.code}
+                  Cotización{" "}
+                  {selectedQuote.quoteNumber || `COT-${selectedQuote.id}`}
                 </h2>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Detalle de la cotización
+                  {loadingDetail
+                    ? "Cargando detalle completo..."
+                    : "Detalle de la cotización"}
                 </p>
               </div>
               <button
@@ -540,7 +604,9 @@ export default function QuotesView({
               <div>
                 <dt className="text-gray-500 dark:text-gray-400">Plan</dt>
                 <dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
-                  {selectedQuote.planName || "—"}
+                  {selectedQuote.appliedPlanName ||
+                    selectedQuote.appliedPlan?.planName ||
+                    "—"}
                 </dd>
               </div>
               <div>
@@ -551,8 +617,24 @@ export default function QuotesView({
               </div>
               <div>
                 <dt className="text-gray-500 dark:text-gray-400">Estado</dt>
-                <dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
-                  {selectedQuote.status === "paid" ? "Pagada" : "Pendiente"}
+                <dd className="mt-1 flex items-center gap-3 font-semibold text-gray-900 dark:text-gray-100">
+                  <span>
+                    {selectedQuote.status === "paid" ? "Pagada" : "Pendiente"}
+                  </span>
+                  {onChangeStatus && (
+                    <button
+                      type="button"
+                      disabled={updatingStatus}
+                      onClick={() => void handleToggleStatus(selectedQuote)}
+                      className="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-semibold text-[#5b642a] transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:text-[#a3b355] dark:hover:bg-gray-700"
+                    >
+                      {updatingStatus
+                        ? "Actualizando..."
+                        : selectedQuote.status === "paid"
+                          ? "Marcar pendiente"
+                          : "Marcar pagada"}
+                    </button>
+                  )}
                 </dd>
               </div>
             </dl>
@@ -575,6 +657,8 @@ export default function QuotesView({
                     <tr key={item.id ?? `${item.name ?? "item"}-${index}`}>
                       <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
                         {item.name ||
+                          item.plant?.name ||
+                          item.service?.name ||
                           (item.itemType === "plant" ? "Planta" : "Servicio")}
                       </td>
                       <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
@@ -604,16 +688,20 @@ export default function QuotesView({
 
             <dl className="ml-auto mt-5 w-full max-w-xs space-y-2 text-sm">
               <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300">
-                <dt>Subtotal</dt>
-                <dd>{formatCurrency(selectedQuote.subtotal)}</dd>
+                <dt>Subtotal base</dt>
+                <dd>{formatCurrency(selectedQuote.basePrice)}</dd>
+              </div>
+              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300">
+                <dt>Subtotal con plan</dt>
+                <dd>{formatCurrency(selectedQuote.discountedSubtotal)}</dd>
               </div>
               <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300">
                 <dt>Descuento</dt>
-                <dd>{formatCurrency(selectedQuote.discountAmount)}</dd>
+                <dd>{formatCurrency(discountAmount)}</dd>
               </div>
               <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300">
                 <dt>IVA</dt>
-                <dd>{formatCurrency(selectedQuote.vatAmount)}</dd>
+                <dd>{formatCurrency(vatAmount)}</dd>
               </div>
               <div className="flex justify-between gap-4 border-t border-gray-200 pt-2 text-base font-bold text-gray-900 dark:border-gray-700 dark:text-gray-100">
                 <dt>Total</dt>

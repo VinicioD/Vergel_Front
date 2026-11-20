@@ -4,7 +4,11 @@ import type {
   CreateQuotePayload,
   PaginatedQuotesResponse,
   Quote,
+  QuoteItem,
+  QuoteItemType,
   QuoteQueryParams,
+  QuoteRefEntity,
+  QuoteStatus,
   UpdateQuotePayload,
 } from "../types/quote";
 
@@ -25,6 +29,12 @@ const readNumber = (value: unknown, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const readNullableId = (value: unknown): number | null => {
+  if (value == null || value === "") return null;
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const unwrapData = (value: unknown) => {
   let current = value;
   for (let depth = 0; depth < 3; depth += 1) {
@@ -40,81 +50,141 @@ const unwrapData = (value: unknown) => {
   return current;
 };
 
-const normalizeItem = (value: unknown) => {
+const normalizeRefEntity = (value: unknown): QuoteRefEntity | null => {
+  const entity = record(value);
+  const id = readNullableId(entity.id);
+  if (id == null) return null;
+
+  return {
+    id,
+    name: readText(entity.name) || undefined,
+    legalName: readText(entity.legalName ?? entity.legal_name) || undefined,
+    tradeName: readText(entity.tradeName ?? entity.trade_name) || undefined,
+    fullName: readText(entity.fullName ?? entity.full_name) || undefined,
+    planCode: readText(entity.planCode ?? entity.plan_code) || undefined,
+    planName: readText(entity.planName ?? entity.plan_name) || undefined,
+  };
+};
+
+const normalizeItem = (value: unknown): QuoteItem => {
   const item = record(value);
-  const itemType = readText(item.item_type ?? item.itemType ?? item.type);
-  const service = record(item.service);
-  const plant = record(item.plant);
+  const rawType = readText(item.itemType ?? item.item_type ?? item.type);
+  const service = normalizeRefEntity(item.service);
+  const plant = normalizeRefEntity(item.plant);
+  const serviceId = readNullableId(
+    item.serviceId ?? item.service_id ?? service?.id,
+  );
+  const plantId = readNullableId(item.plantId ?? item.plant_id ?? plant?.id);
+
+  const itemType: QuoteItemType =
+    rawType === "plant" || plantId != null ? "plant" : "service";
+
   const name =
     readText(item.name) ||
-    readText(service.name) ||
-    readText(plant.name);
+    (itemType === "plant"
+      ? plant?.name || service?.name || ""
+      : service?.name || plant?.name || "");
 
   return {
     id: item.id == null ? undefined : readNumber(item.id),
-    itemType: itemType === "plant" || item.plant_id != null || item.plantId != null || item.plant
-      ? ("plant" as const)
-      : ("service" as const),
-    serviceId: item.service_id == null && item.serviceId == null && service.id == null
-      ? undefined
-      : readNumber(item.service_id ?? item.serviceId ?? service.id),
-    plantId: item.plant_id == null && item.plantId == null && plant.id == null
-      ? undefined
-      : readNumber(item.plant_id ?? item.plantId ?? plant.id),
+    itemType,
+    serviceId,
+    plantId,
+    service,
+    plant,
     name,
     quantity: readNumber(item.quantity),
-    unitPrice: readNumber(item.unit_price ?? item.unitPrice),
+    unitPrice: readNumber(item.unitPrice ?? item.unit_price),
     total: readNumber(item.total ?? item.line_total),
   };
 };
 
 const normalizeQuote = (value: unknown): Quote => {
   const quote = record(value);
-  const customer = record(quote.customer);
-  const plan = record(quote.applied_plan ?? quote.appliedPlan ?? quote.subscription_plan ?? quote.subscriptionPlan);
-  const employee = record(quote.employee);
+  const customer = normalizeRefEntity(quote.customer);
+  const appliedPlan = normalizeRefEntity(
+    quote.appliedPlan ??
+      quote.applied_plan ??
+      quote.subscriptionPlan ??
+      quote.subscription_plan,
+  );
+  const employee = normalizeRefEntity(quote.employee);
+
   const itemsValue = Array.isArray(quote.items)
     ? quote.items
     : Array.isArray(quote.quote_items)
       ? quote.quote_items
       : [];
+  const normalizedItems = itemsValue.map(normalizeItem);
+
   const statusValue = readText(quote.status, "pending");
+  const basePrice = readNumber(
+    quote.basePrice ?? quote.base_price ?? quote.subtotal,
+  );
+  const discountedSubtotal = readNumber(
+    quote.discountedSubtotal ?? quote.discounted_subtotal ?? basePrice,
+  );
 
   return {
     id: readNumber(quote.id),
-    code: readText(quote.code ?? quote.quote_code ?? `COT-${quote.id ?? ""}`),
-    customerId:
-      quote.customer_id == null && quote.customerId == null && customer.id == null
-        ? null
-        : readNumber(quote.customer_id ?? quote.customerId ?? customer.id),
+    quoteNumber: readText(
+      quote.quoteNumber ??
+        quote.quote_number ??
+        quote.code ??
+        `COT-${quote.id ?? ""}`,
+    ),
+    customerId: readNullableId(
+      quote.customerId ?? quote.customer_id ?? customer?.id,
+    ),
     customerName:
-      readText(customer.legal_name ?? customer.legalName) ||
-      readText(customer.trade_name ?? customer.tradeName) ||
-      readText(quote.customer_name ?? quote.customerName, "Sin cliente"),
-    appliedPlanId:
-      quote.applied_plan_id == null && quote.appliedPlanId == null && quote.subscription_plan_id == null && plan.id == null
-        ? null
-        : readNumber(quote.applied_plan_id ?? quote.appliedPlanId ?? quote.subscription_plan_id ?? plan.id),
-    planName:
-      readText(plan.plan_name ?? plan.planName) ||
-      readText(quote.plan_name ?? quote.planName),
-    employeeId:
-      quote.employee_id == null && quote.employeeId == null
-        ? null
-        : readNumber(quote.employee_id ?? quote.employeeId),
+      customer?.legalName ||
+      customer?.tradeName ||
+      customer?.name ||
+      readText(quote.customerName ?? quote.customer_name, "Sin cliente"),
+    customer,
+    appliedPlanId: readNullableId(
+      quote.appliedPlanId ??
+        quote.applied_plan_id ??
+        quote.subscriptionPlanId ??
+        quote.subscription_plan_id ??
+        appliedPlan?.id,
+    ),
+    appliedPlanName:
+      appliedPlan?.planName ||
+      appliedPlan?.name ||
+      readText(
+        quote.appliedPlanName ??
+          quote.applied_plan_name ??
+          quote.planName ??
+          quote.plan_name,
+      ),
+    appliedPlan,
+    employeeId: readNullableId(
+      quote.employeeId ?? quote.employee_id ?? employee?.id,
+    ),
     employeeName:
-      readText(employee.full_name ?? employee.fullName) ||
-      readText(quote.employee_name ?? quote.employeeName),
-    includesVat: Boolean(quote.includes_vat ?? quote.includesVat),
-    loyaltyPointsUsed: readNumber(quote.loyalty_points_used ?? quote.loyaltyPointsUsed),
-    loyaltyPointsEarned: readNumber(quote.loyalty_points_earned ?? quote.loyaltyPointsEarned),
-    subtotal: readNumber(quote.subtotal),
-    discountAmount: readNumber(quote.discount_amount ?? quote.discountAmount),
-    vatAmount: readNumber(quote.vat_amount ?? quote.vatAmount),
+      employee?.fullName ||
+      employee?.name ||
+      readText(quote.employeeName ?? quote.employee_name),
+    employee,
+    includesVat: Boolean(quote.includesVat ?? quote.includes_vat),
+    loyaltyPointsUsed: readNumber(
+      quote.loyaltyPointsUsed ?? quote.loyalty_points_used,
+    ),
+    loyaltyPointsEarned: readNumber(
+      quote.loyaltyPointsEarned ?? quote.loyalty_points_earned,
+    ),
+    basePrice,
+    discountedSubtotal,
     total: readNumber(quote.total),
     status: statusValue === "paid" ? "paid" : "pending",
-    items: itemsValue.map(normalizeItem),
-    createdAt: readText(quote.created_at ?? quote.createdAt),
+    itemsCount: readNumber(
+      quote.itemsCount ?? quote.items_count,
+      normalizedItems.length,
+    ),
+    items: normalizedItems,
+    createdAt: readText(quote.createdAt ?? quote.created_at),
+    updatedAt: readText(quote.updatedAt ?? quote.updated_at) || undefined,
   };
 };
 
@@ -132,9 +202,15 @@ export const getQuotes = async (
         : [];
   const meta = record(payload.meta);
   const page = readNumber(meta.current_page, readNumber(params?.page, 1));
-  const perPage = readNumber(meta.per_page, readNumber(params?.per_page ?? params?.limit, 10));
+  const perPage = readNumber(
+    meta.per_page,
+    readNumber(params?.per_page ?? params?.limit, 15),
+  );
   const total = readNumber(meta.total, dataValue.length);
-  const lastPage = readNumber(meta.last_page, Math.max(1, Math.ceil(total / perPage)));
+  const lastPage = readNumber(
+    meta.last_page,
+    Math.max(1, Math.ceil(total / perPage)),
+  );
 
   return {
     data: dataValue.map(normalizeQuote),
@@ -150,15 +226,18 @@ export const getQuotes = async (
   };
 };
 
-export const getQuoteById = async (id: number | string): Promise<{ data: Quote }> => {
+export const getQuoteById = async (
+  id: number | string,
+): Promise<{ data: Quote }> => {
   const response = await api.get<unknown>(`/quotes/${id}`);
   return { data: normalizeQuote(unwrapData(response.data)) };
 };
 
-export const createQuote = async (payload: CreateQuotePayload): Promise<{ data: Quote }> => {
+export const createQuote = async (
+  payload: CreateQuotePayload,
+): Promise<{ data: Quote }> => {
   const response = await api.post<unknown>("/quotes", payload);
-  const body = record(response.data);
-  return { data: normalizeQuote(body.data ?? body.quote ?? body) };
+  return { data: normalizeQuote(unwrapData(response.data)) };
 };
 
 export const updateQuote = async (
@@ -166,17 +245,15 @@ export const updateQuote = async (
   payload: UpdateQuotePayload,
 ): Promise<{ data: Quote }> => {
   const response = await api.put<unknown>(`/quotes/${id}`, payload);
-  const body = record(response.data);
-  return { data: normalizeQuote(body.data ?? body.quote ?? body) };
+  return { data: normalizeQuote(unwrapData(response.data)) };
 };
 
 export const updateQuoteStatus = async (
   id: number | string,
-  status: "pending" | "paid",
+  status: QuoteStatus,
 ): Promise<{ data: Quote }> => {
   const response = await api.patch<unknown>(`/quotes/${id}/status`, { status });
-  const body = record(response.data);
-  return { data: normalizeQuote(body.data ?? body.quote ?? body) };
+  return { data: normalizeQuote(unwrapData(response.data)) };
 };
 
 export const deleteQuote = async (id: number | string): Promise<void> => {

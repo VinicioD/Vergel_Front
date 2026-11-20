@@ -61,7 +61,7 @@ export interface CreateSubscriptionPlanDTO {
 }
 
 // Payload para Actualizar un plan (PUT / PATCH)
-export interface UpdateSubscriptionPlanDTO extends Partial<CreateSubscriptionPlanDTO> {}
+export type UpdateSubscriptionPlanDTO = Partial<CreateSubscriptionPlanDTO>;
 
 // Tipos para los clientes (subscribers) suscritos a un plan
 export interface Subscriber {

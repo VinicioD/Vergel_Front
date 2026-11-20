@@ -35,6 +35,12 @@ import {
 } from "../../services/customerService";
 import type { CustomerListItem, CustomerDetail } from "../../types/customer";
 import type { Client, ClientsViewProps } from "../../types/customer";
+import { pdf } from "@react-pdf/renderer";
+import {
+  ReportPdfDocument,
+  type ReportPdfRow,
+} from "../../pdf/ReportPdfDocument";
+import { triggerPdfDownload } from "../../pdf/downloadPdf";
 
 const STATUS_OPTIONS: SelectOption[] = [
   { label: "Todos los estados", value: "ALL" },
@@ -446,56 +452,40 @@ export default function ClientsView({
       const detailResponse = await getCustomerById(clientItem.id);
       const detail = detailResponse.data;
 
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        showToast(
-          "error",
-          "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
-        );
-        return;
-      }
+      const rows: ReportPdfRow[] = [
+        { cells: ["Razón social", detail.legalName] },
+        { cells: ["Nombre comercial", detail.tradeName || "—"] },
+        { cells: ["Estado", String(detail.status).toUpperCase()] },
+        { cells: ["NIT / DUI", detail.taxId || "—"] },
+        { cells: ["NRC", detail.nrc || "—"] },
+        { cells: ["Teléfono", detail.phone || "—"] },
+        { cells: ["Correo", detail.email || "—"] },
+        {
+          cells: [
+            "Dirección",
+            [detail.address, detail.municipality, detail.department]
+              .filter(Boolean)
+              .join(", ") || "—",
+          ],
+        },
+      ];
 
-      const content = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="UTF-8">
-          <title>Ficha de Cliente - ${detail.legalName}</title>
-          <style>
-            body { font-family: system-ui, sans-serif; padding: 30px; color: #1f2937; }
-            .header { border-bottom: 2px solid #5b642a; padding-bottom: 12px; margin-bottom: 20px; }
-            .title { font-size: 22px; font-weight: bold; color: #2A3319; }
-            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-            .card { background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
-            .label { font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: bold; }
-            .value { font-size: 14px; font-weight: 600; margin-top: 4px; }
-            .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: bold; background: #d1fae5; color: #065f46; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="title">${detail.legalName}</div>
-            <p>Ficha Técnica del Cliente #${detail.id}</p>
-          </div>
-          <div class="grid">
-            <div class="card"><div class="label">Nombre Comercial</div><div class="value">${detail.tradeName || "—"}</div></div>
-            <div class="card"><div class="label">Estado</div><div class="value"><span class="badge">${detail.status.toUpperCase()}</span></div></div>
-            <div class="card"><div class="label">NIT / DUI</div><div class="value">${detail.taxId || "—"}</div></div>
-            <div class="card"><div class="label">NRC</div><div class="value">${detail.nrc || "—"}</div></div>
-            <div class="card"><div class="label">Teléfono</div><div class="value">${detail.phone}</div></div>
-            <div class="card"><div class="label">Correo</div><div class="value">${detail.email || "—"}</div></div>
-            <div class="card" style="grid-column: span 2;"><div class="label">Dirección</div><div class="value">${detail.address}, ${detail.municipality}, ${detail.department}</div></div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); window.close(); };
-          </script>
-        </body>
-        </html>
-      `;
+      const pdfBlob = await pdf(
+        <ReportPdfDocument
+          reportTitle="Ficha Técnica del Cliente"
+          subtitle={detail.legalName}
+          dateRangeLabel={`Cliente #${detail.id}`}
+          headers={["Campo", "Detalle"]}
+          rows={rows}
+          orientation="portrait"
+        />,
+      ).toBlob();
 
-      printWindow.document.write(content);
-      printWindow.document.close();
-      showToast("info", "Ficha del cliente generada correctamente");
+      triggerPdfDownload(
+        pdfBlob,
+        `Cliente_${detail.id}_${new Date().toISOString().slice(0, 10)}.pdf`,
+      );
+      showToast("success", "Ficha del cliente generada correctamente");
     } catch (error) {
       console.error("Error al descargar ficha del cliente:", error);
       showToast("error", "No se pudo descargar la ficha del cliente.");
@@ -573,55 +563,32 @@ export default function ClientsView({
         link.click();
         document.body.removeChild(link);
       } else {
-        const printWindow = window.open("", "_blank");
-        if (!printWindow) {
-          showToast(
-            "error",
-            "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
-          );
-          return;
-        }
+        const rows: ReportPdfRow[] = dataToExport.map((c) => ({
+          cells: [
+            `#${c.id}`,
+            [c.legalName, c.tradeName].filter(Boolean).join(" / "),
+            c.phone || "—",
+            c.taxId || "—",
+            String(c.status).toUpperCase(),
+          ],
+        }));
 
-        const tableRows = dataToExport
-          .map(
-            (c) => `
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">#${c.id}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;"><b>${c.legalName}</b><br><small>${c.tradeName || ""}</small></td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">${c.phone}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">${c.taxId || "—"}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">${c.status}</td>
-          </tr>`,
-          )
-          .join("");
+        const pdfBlob = await pdf(
+          <ReportPdfDocument
+            reportTitle="Reporte de Clientes"
+            subtitle={`Alcance: ${
+              exportScope === "ALL" ? "Todos" : exportScope.toUpperCase()
+            }`}
+            dateRangeLabel={new Date().toLocaleDateString("es-SV")}
+            headers={["ID", "Cliente", "Teléfono", "NIT", "Estado"]}
+            rows={rows}
+          />,
+        ).toBlob();
 
-        const content = `
-          <!DOCTYPE html>
-          <html lang="es">
-          <head>
-            <title>Reporte de Clientes (${exportScope})</title>
-            <style>
-              body { font-family: system-ui, sans-serif; padding: 20px; }
-              table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-              th { background: #f3f4f6; padding: 8px; border-bottom: 2px solid #ccc; }
-            </style>
-          </head>
-          <body>
-            <h2>Reporte de Clientes (${exportScope.toUpperCase()})</h2>
-            <p>Fecha: ${new Date().toLocaleDateString("es-SV")}</p>
-            <table>
-              <thead>
-                <tr><th>ID</th><th>Cliente</th><th>Teléfono</th><th>NIT</th><th>Estado</th></tr>
-              </thead>
-              <tbody>${tableRows}</tbody>
-            </table>
-            <script>window.onload = function() { window.print(); window.close(); };</script>
-          </body>
-          </html>
-        `;
-
-        printWindow.document.write(content);
-        printWindow.document.close();
+        triggerPdfDownload(
+          pdfBlob,
+          `Clientes_${exportScope}_${new Date().toISOString().slice(0, 10)}.pdf`,
+        );
       }
 
       setExportOpen(false);

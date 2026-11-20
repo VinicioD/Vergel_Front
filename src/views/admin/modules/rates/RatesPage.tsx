@@ -1,5 +1,5 @@
 // src/views/admin/modules/rates/RatesPage.tsx
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { isAxiosError } from "axios";
 import { Search, Plus, Eye, Edit2, Trash2, X, Loader2 } from "lucide-react";
 import Button from "../../../../components/Button";
@@ -146,32 +146,32 @@ export default function RatesPage() {
   } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const fetchRates = useCallback(async () => {
-    setLoading(true);
-    setErrorMessage("");
-    try {
-      const response = await getCountryConfigs();
-      setRates(
-        response.data.map((item) => ({
-          id: item.id,
-          country: item.country,
-          currency: item.currency,
-          taxPercentage: item.taxPercentage,
-          cardFeePercentage: item.cardFeePercentage ?? 0,
-          createdAt: item.createdAt,
-        })),
-      );
-    } catch (error) {
-      setRates([]);
-      setErrorMessage(getErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
+    const fetchRates = async () => {
+      setLoading(true);
+      setErrorMessage("");
+      try {
+        const response = await getCountryConfigs();
+        setRates(
+          response.data.map((item) => ({
+            id: item.id,
+            country: item.country,
+            currency: item.currency,
+            taxPercentage: item.taxPercentage,
+            cardFeePercentage: item.cardFeePercentage ?? 0,
+            createdAt: item.createdAt,
+          })),
+        );
+      } catch (error) {
+        setRates([]);
+        setErrorMessage(getErrorMessage(error));
+      } finally {
+        setLoading(false);
+      }
+    };
+
     void fetchRates();
-  }, [fetchRates, reloadKey]);
+  }, [reloadKey]);
 
   const filteredData = rates.filter((item) => {
     const query = searchTerm.trim().toLowerCase();

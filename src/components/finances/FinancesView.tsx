@@ -1,5 +1,5 @@
 // src/components/finances/FinancesView.tsx
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { isAxiosError } from "axios";
 import {
   BarChart3,
@@ -101,44 +101,45 @@ export default function FinancesView({
   const [isLoadingPurchases, setIsLoadingPurchases] = useState(false);
 
   // 1. Cargar resumen y movimientos recientes
-  const loadSummaryAndMovements = useCallback(async () => {
-    setIsLoadingSummary(true);
-    setErrorMessage("");
-    try {
-      const dateParams = {
-        from: fromDate || undefined,
-        to: toDate || undefined,
-      };
-      const [summaryRes, movementsRes] = await Promise.all([
-        getFinanceSummary(dateParams),
-        getFinanceMovements({ ...dateParams, per_page: 6 }),
-      ]);
-      setSummary(summaryRes.data ?? null);
-      setMovements(movementsRes.data ?? []);
-    } catch (error) {
-      if (isAxiosError(error)) {
-        if (error.response?.status === 403) {
-          setErrorMessage(
-            "No tienes permisos para consultar los indicadores financieros.",
-          );
-        } else {
-          const msg = (error.response?.data as { message?: string } | undefined)
-            ?.message;
-          setErrorMessage(
-            msg || "No se pudo cargar la información financiera.",
-          );
-        }
-      } else {
-        setErrorMessage("No se pudo cargar la información financiera.");
-      }
-    } finally {
-      setIsLoadingSummary(false);
-    }
-  }, [fromDate, toDate]);
-
   useEffect(() => {
+    const loadSummaryAndMovements = async () => {
+      setIsLoadingSummary(true);
+      setErrorMessage("");
+      try {
+        const dateParams = {
+          from: fromDate || undefined,
+          to: toDate || undefined,
+        };
+        const [summaryRes, movementsRes] = await Promise.all([
+          getFinanceSummary(dateParams),
+          getFinanceMovements({ ...dateParams, per_page: 6 }),
+        ]);
+        setSummary(summaryRes.data ?? null);
+        setMovements(movementsRes.data ?? []);
+      } catch (error) {
+        if (isAxiosError(error)) {
+          if (error.response?.status === 403) {
+            setErrorMessage(
+              "No tienes permisos para consultar los indicadores financieros.",
+            );
+          } else {
+            const msg = (
+              error.response?.data as { message?: string } | undefined
+            )?.message;
+            setErrorMessage(
+              msg || "No se pudo cargar la información financiera.",
+            );
+          }
+        } else {
+          setErrorMessage("No se pudo cargar la información financiera.");
+        }
+      } finally {
+        setIsLoadingSummary(false);
+      }
+    };
+
     void loadSummaryAndMovements();
-  }, [loadSummaryAndMovements]);
+  }, [fromDate, toDate]);
 
   // 2. Cargar cotizaciones paginadas
   useEffect(() => {

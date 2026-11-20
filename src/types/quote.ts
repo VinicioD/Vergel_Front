@@ -1,10 +1,33 @@
 export type QuoteStatus = "pending" | "paid";
 
+export type QuoteItemType = "service" | "plant";
+
+export type QuoteSortField =
+  | "id"
+  | "quote_number"
+  | "status"
+  | "total"
+  | "created_at";
+
+export type SortDirection = "asc" | "desc";
+
+export interface QuoteRefEntity {
+  id: number;
+  name?: string;
+  legalName?: string;
+  tradeName?: string;
+  fullName?: string;
+  planCode?: string;
+  planName?: string;
+}
+
 export interface QuoteItem {
   id?: number;
-  itemType?: "service" | "plant";
+  itemType: QuoteItemType;
   serviceId?: number | null;
   plantId?: number | null;
+  service?: QuoteRefEntity | null;
+  plant?: QuoteRefEntity | null;
   name?: string;
   quantity: number;
   unitPrice: number;
@@ -13,23 +36,27 @@ export interface QuoteItem {
 
 export interface Quote {
   id: number;
-  code: string;
+  quoteNumber: string;
   customerId: number | null;
   customerName: string;
+  customer?: QuoteRefEntity | null;
   appliedPlanId: number | null;
-  planName: string;
+  appliedPlanName: string;
+  appliedPlan?: QuoteRefEntity | null;
   employeeId: number | null;
   employeeName: string;
+  employee?: QuoteRefEntity | null;
   includesVat: boolean;
   loyaltyPointsUsed: number;
   loyaltyPointsEarned: number;
-  subtotal: number;
-  discountAmount: number;
-  vatAmount: number;
+  basePrice: number;
+  discountedSubtotal: number;
   total: number;
   status: QuoteStatus;
+  itemsCount: number;
   items: QuoteItem[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface QuoteQueryParams {
@@ -38,6 +65,13 @@ export interface QuoteQueryParams {
   per_page?: number;
   search?: string;
   status?: QuoteStatus;
+  customer_id?: number;
+  employee_id?: number;
+  applied_plan_id?: number;
+  desde?: string;
+  hasta?: string;
+  sort_by?: QuoteSortField;
+  sort_direction?: SortDirection;
 }
 
 export interface PaginatedQuotesResponse {
@@ -54,7 +88,7 @@ export interface PaginatedQuotesResponse {
 }
 
 export interface CreateQuoteItemPayload {
-  item_type: "service" | "plant";
+  item_type: QuoteItemType;
   service_id?: number;
   plant_id?: number;
   quantity: number;
