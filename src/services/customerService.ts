@@ -40,8 +40,21 @@ export interface UpdateCustomerPayload {
 export const getCustomers = async (
   params?: CustomerQueryParams,
 ): Promise<PaginatedCustomersResponse> => {
+  const safeParams = params
+    ? {
+        ...params,
+        limit:
+          params.limit === undefined
+            ? undefined
+            : Math.min(Math.max(Math.trunc(params.limit), 1), 100),
+        page:
+          params.page === undefined
+            ? undefined
+            : Math.max(Math.trunc(params.page), 1),
+      }
+    : undefined;
   const response = await api.get<PaginatedCustomersResponse>("/customers", {
-    params,
+    params: safeParams,
   });
   return response.data;
 };

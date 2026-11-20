@@ -463,15 +463,27 @@ export default function ClientsView({
   // Exportar lista masiva (Excel / PDF) según los filtros aplicados
   const handleExport = async () => {
     try {
-      const response = await getCustomers({
+      const customerQuery = {
         status:
           exportScope !== "ALL"
             ? (exportScope as "active" | "inactive")
             : undefined,
-        limit: 1000,
-      });
-
-      const dataToExport = response.data;
+        limit: 100,
+      };
+      const firstPage = await getCustomers({ ...customerQuery, page: 1 });
+      const remainingPages = Array.from(
+        { length: Math.max(0, firstPage.meta.last_page - 1) },
+        (_, index) => index + 2,
+      );
+      const remainingResponses = await Promise.all(
+        remainingPages.map((page) =>
+          getCustomers({ ...customerQuery, page }),
+        ),
+      );
+      const dataToExport = [
+        ...firstPage.data,
+        ...remainingResponses.flatMap((response) => response.data),
+      ];
 
       if (dataToExport.length === 0) {
         showToast("info", "No se encontraron registros para exportar.");
