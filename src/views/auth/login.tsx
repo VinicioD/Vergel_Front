@@ -31,15 +31,30 @@ export default function Login() {
       });
     } catch (error: unknown) {
       console.error("Error al iniciar sesión:", error);
-      if (
-        isAxiosError(error) &&
-        (error.response?.status === 422 || error.response?.status === 401)
-      ) {
-        setErrorMessage("Las credenciales proporcionadas son incorrectas.");
+      if (isAxiosError(error)) {
+        const status = error.response?.status;
+        const body = error.response?.data as
+          | { message?: string; errors?: Record<string, string[] | string> }
+          | undefined;
+
+        if (status === 422) {
+          const validationMessages = body?.errors
+            ? Object.values(body.errors).flat().join(" ")
+            : "";
+          setErrorMessage(
+            validationMessages ||
+              body?.message ||
+              "Las credenciales proporcionadas son incorrectas.",
+          );
+        } else if (status === 401) {
+          setErrorMessage("Las credenciales proporcionadas son incorrectas.");
+        } else if (status === 403) {
+          setErrorMessage("Tu usuario no tiene autorización para iniciar sesión.");
+        } else {
+          setErrorMessage("Error de conexión con el servidor. Inténtalo más tarde.");
+        }
       } else {
-        setErrorMessage(
-          "Error de conexión con el servidor. Inténtalo más tarde.",
-        );
+        setErrorMessage("Error de conexión con el servidor. Inténtalo más tarde.");
       }
     } finally {
       setLoading(false);
