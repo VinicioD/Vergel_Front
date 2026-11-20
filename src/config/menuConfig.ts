@@ -14,8 +14,10 @@ import {
   ShieldCheck,
   Settings,
   Store,
+  ScrollText,
 } from "lucide-react";
 
+// Solo incluye rutas que existen en AdminRoutes.tsx
 export const adminMenu = [
   { name: "Clientes", icon: Users, path: "/admin/clients" },
   { name: "Proveedores", icon: Store, path: "/admin/suppliers" },
@@ -32,6 +34,7 @@ export const adminMenu = [
   { name: "Colaboradores", icon: User, path: "/admin/users" },
   { name: "Roles", icon: ShieldCheck, path: "/admin/roles" },
   { name: "Configuración", icon: Settings, path: "/admin/settings" },
+  { name: "Auditoría", icon: ScrollText, path: "/admin/audit" },
 ];
 
 // Solo incluye rutas que existen en UserRoutes.tsx
@@ -53,6 +56,7 @@ export const technicalMenu = [
 export const auditorMenu = [
   { name: "Historial", icon: History, path: "/auditor/history" },
   { name: "Movimientos", icon: ArrowRightLeft, path: "/auditor/transactions" },
+  { name: "Auditoría", icon: ScrollText, path: "/auditor/audit" },
 ];
 
 // Solo incluye rutas que existen en QuoteRoutes.tsx
