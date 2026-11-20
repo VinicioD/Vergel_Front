@@ -24,6 +24,7 @@ import ProfilePage from "./modules/profile/ProfilePage";
 import UsersPage from "./modules/users/UsersPage";
 import RolesPage from "./modules/roles/RolesPage";
 import SuppliersPage from "./modules/suppliers/SuppliersPage";
+import AuditLogView from "../../components/audit/page";
 
 export default function AdminRoutes() {
   return (
@@ -33,6 +34,7 @@ export default function AdminRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="clients" element={<ClientsPage />} />
         <Route path="suppliers" element={<SuppliersPage />} />
+        <Route path="audit" element={<AuditLogView />} />
         <Route path="quotes" element={<QuotesPage />} />
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="schedule/new" element={<AppointmentFormPage />} />
