@@ -1,29 +1,36 @@
 // src/views/technical/Dashboard.tsx
+import { useEffect, useState } from "react";
 import KpiCard from "../../components/KpiCard";
-import { Calendar, FileText } from "lucide-react";
+import { Calendar, FileText, CircleAlert, RefreshCw } from "lucide-react";
+import { getTechnicalDashboardStats, type TechnicalDashboardStats } from "../../services/dashboardService";
 
-const KPIS = [
-  {
-    title: "Visitas de hoy",
-    value: "3",
-    badgeText: "2 Asignadas",
-    badgeType: "positive" as const,
-  },
-  {
-    title: "Completadas (mes)",
-    value: "18",
-    badgeText: "+4",
-    badgeType: "positive" as const,
-  },
-  {
-    title: "Pendientes",
-    value: "2",
-    badgeText: "Requieren atención",
-    badgeType: "warning" as const,
-  },
-];
+const EMPTY_STATS: TechnicalDashboardStats = { todayVisits: 0, completedMonth: 0, pendingVisits: 0 };
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<TechnicalDashboardStats>(EMPTY_STATS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const loadStats = async () => {
+    setIsLoading(true);
+    try { setStats(await getTechnicalDashboardStats()); setErrorMessage(""); }
+    catch (error) { setErrorMessage(error instanceof Error ? error.message : "No se pudieron cargar las estadísticas."); }
+    finally { setIsLoading(false); }
+  };
+
+  useEffect(() => {
+    void getTechnicalDashboardStats()
+      .then((response) => { setStats(response); setErrorMessage(""); })
+      .catch((error: unknown) => { setErrorMessage(error instanceof Error ? error.message : "No se pudieron cargar las estadísticas."); })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const kpis = [
+    { title: "Visitas de hoy", value: isLoading ? "—" : String(stats.todayVisits), badgeText: "Asignadas", badgeType: "positive" as const },
+    { title: "Completadas (mes)", value: isLoading ? "—" : String(stats.completedMonth), badgeText: "Este mes", badgeType: "positive" as const },
+    { title: "Pendientes", value: isLoading ? "—" : String(stats.pendingVisits), badgeText: "Requieren atención", badgeType: "warning" as const },
+  ];
+
   return (
     <div className="w-full flex flex-col gap-6 p-4 sm:p-6 font-sans">
       {/* HEADER RESPONSIVO */}
@@ -36,11 +43,29 @@ export default function Dashboard() {
             Resumen de tus visitas e inspecciones asignadas
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => void loadStats()}
+          disabled={isLoading}
+          title="Actualizar estadísticas"
+          className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 shadow-sm disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 sm:self-auto"
+        >
+          <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
+          Actualizar
+        </button>
       </div>
+
+      {/* MENSAJE DE ERROR */}
+      {errorMessage && (
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
+          <CircleAlert size={16} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       {/* TARJETAS DE INDICADORES */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {KPIS.map((kpi) => (
+        {kpis.map((kpi) => (
           <KpiCard
             key={kpi.title}
             title={kpi.title}

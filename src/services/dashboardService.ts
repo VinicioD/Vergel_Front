@@ -1,4 +1,7 @@
+import { getAppointments } from "./appointmentService";
+import { getAuditLogs } from "./auditService";
 import { getCustomers } from "./customerService";
+import { getQuotes } from "./quoteService";
 import { getRoles } from "./roleService";
 import { getSubscriptionPlans } from "./subscriptionPlanService";
 
@@ -14,6 +17,33 @@ export interface AdminDashboardStats {
     name: string;
     count: number;
   }>;
+}
+
+export interface QuoteDashboardStats {
+  monthlyQuotes: number;
+  monthlyAmount: number;
+  approvalRate: number;
+  pending: number;
+}
+
+export interface CounterDashboardStats {
+  income: number;
+  expenses: number;
+  accountsReceivable: number;
+  quotesIssued: number;
+}
+
+export interface AuditorDashboardStats {
+  monthlyMovements: number;
+  auditedIncome: number;
+  pendingReview: number;
+  discrepancies: number;
+}
+
+export interface TechnicalDashboardStats {
+  todayVisits: number;
+  completedMonth: number;
+  pendingVisits: number;
 }
 
 const getCustomerTotal = async (status?: string): Promise<number> => {
