@@ -1,5 +1,3 @@
-import { getAppointments } from "./appointmentService";
-import { getAuditLogs } from "./auditService";
 import { getCustomers } from "./customerService";
 import { getQuotes } from "./quoteService";
 import { getRoles } from "./roleService";
@@ -19,11 +17,11 @@ export interface AdminDashboardStats {
   }>;
 }
 
-export interface QuoteDashboardStats {
-  monthlyQuotes: number;
-  monthlyAmount: number;
-  approvalRate: number;
-  pending: number;
+export interface AuditorDashboardStats {
+  monthlyMovements: number;
+  auditedIncome: number;
+  pendingReview: number;
+  discrepancies: number;
 }
 
 export interface CounterDashboardStats {
@@ -33,11 +31,11 @@ export interface CounterDashboardStats {
   quotesIssued: number;
 }
 
-export interface AuditorDashboardStats {
-  monthlyMovements: number;
-  auditedIncome: number;
-  pendingReview: number;
-  discrepancies: number;
+export interface QuoteDashboardStats {
+  monthlyQuotes: number;
+  monthlyAmount: number;
+  approvalRate: number;
+  pending: number;
 }
 
 export interface TechnicalDashboardStats {
@@ -107,5 +105,136 @@ export const getAdminDashboardStats =
         name,
         count,
       })).sort((first, second) => second.count - first.count),
+    };
+  };
+
+export const getAuditorDashboardStats =
+  async (): Promise<AuditorDashboardStats> => {
+    const now = new Date();
+    const startOfMonth = formatDate(
+      new Date(now.getFullYear(), now.getMonth(), 1),
+    );
+    const today = formatDate(now);
+
+    const paidQuotes = await getQuotes({
+      status: "paid",
+      desde: startOfMonth,
+      hasta: today,
+      limit: 100,
+    }).catch(() => null);
+
+    const auditedIncome = (paidQuotes?.data ?? []).reduce(
+      (sum, quote) => sum + (Number.isFinite(quote.total) ? quote.total : 0),
+      0,
+    );
+
+    return {
+      monthlyMovements: paidQuotes?.meta?.total ?? paidQuotes?.data.length ?? 0,
+      auditedIncome,
+      pendingReview: 0,
+      discrepancies: 0,
+    };
+  };
+
+export const getCounterDashboardStats =
+  async (): Promise<CounterDashboardStats> => {
+    const now = new Date();
+    const startOfMonth = formatDate(
+      new Date(now.getFullYear(), now.getMonth(), 1),
+    );
+    const today = formatDate(now);
+
+    const [paidMonthResponse, pendingAllResponse, issuedMonthResponse] =
+      await Promise.all([
+        getQuotes({
+          status: "paid",
+          desde: startOfMonth,
+          hasta: today,
+          limit: 100,
+        }).catch(() => null),
+        getQuotes({
+          status: "pending",
+          limit: 100,
+        }).catch(() => null),
+        getQuotes({
+          desde: startOfMonth,
+          hasta: today,
+          limit: 1,
+        }).catch(() => null),
+      ]);
+
+    const income = (paidMonthResponse?.data ?? []).reduce(
+      (sum, quote) => sum + (Number.isFinite(quote.total) ? quote.total : 0),
+      0,
+    );
+
+    const accountsReceivable = (pendingAllResponse?.data ?? []).reduce(
+      (sum, quote) => sum + (Number.isFinite(quote.total) ? quote.total : 0),
+      0,
+    );
+
+    return {
+      income,
+      expenses: 0,
+      accountsReceivable,
+      quotesIssued:
+        issuedMonthResponse?.meta?.total ??
+        issuedMonthResponse?.data.length ??
+        0,
+    };
+  };
+
+export const getQuoteDashboardStats =
+  async (): Promise<QuoteDashboardStats> => {
+    const now = new Date();
+    const startOfMonth = formatDate(
+      new Date(now.getFullYear(), now.getMonth(), 1),
+    );
+    const today = formatDate(now);
+
+    const [monthQuotesResponse, pendingQuotesResponse] = await Promise.all([
+      getQuotes({
+        desde: startOfMonth,
+        hasta: today,
+        limit: 100,
+      }).catch(() => null),
+      getQuotes({
+        status: "pending",
+        limit: 1,
+      }).catch(() => null),
+    ]);
+
+    const monthQuotes = monthQuotesResponse?.data ?? [];
+    const monthlyQuotes =
+      monthQuotesResponse?.meta?.total ?? monthQuotes.length;
+    const monthlyAmount = monthQuotes.reduce(
+      (sum, quote) => sum + (Number.isFinite(quote.total) ? quote.total : 0),
+      0,
+    );
+    const paidInMonth = monthQuotes.filter(
+      (quote) => quote.status === "paid",
+    ).length;
+    const approvalRate =
+      monthQuotes.length > 0
+        ? Math.round((paidInMonth / monthQuotes.length) * 100)
+        : 0;
+
+    return {
+      monthlyQuotes,
+      monthlyAmount,
+      approvalRate,
+      pending:
+        pendingQuotesResponse?.meta?.total ??
+        pendingQuotesResponse?.data.length ??
+        0,
+    };
+  };
+
+export const getTechnicalDashboardStats =
+  async (): Promise<TechnicalDashboardStats> => {
+    return {
+      todayVisits: 0,
+      completedMonth: 0,
+      pendingVisits: 0,
     };
   };
