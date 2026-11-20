@@ -98,7 +98,7 @@ export default function UserForm({
     getRoles()
       .then((response) => {
         if (isMounted) {
-          setRoles(response);
+          setRoles(response.data);
           setRolesError("");
         }
       })
@@ -114,18 +114,11 @@ export default function UserForm({
     };
   }, []);
 
-  const roleOptions: SelectOption[] = roles
-    .filter((role) => role.active !== false)
-    .map((role) => ({
-      label:
-        role.name ||
-        role.role_name ||
-        role.roleName ||
-        role.title ||
-        "Sin nombre",
-      value: String(role.id),
-      description: role.description || "Sin descripción",
-    }));
+  const roleOptions: SelectOption[] = roles.map((role) => ({
+    label: role.roleName || "Sin nombre",
+    value: String(role.id),
+    description: role.description || "Sin descripción",
+  }));
 
   const statusOptions: SelectOption[] = [
     { label: "Activo", value: "true" },
