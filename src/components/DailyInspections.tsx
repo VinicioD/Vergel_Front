@@ -18,6 +18,7 @@ interface DailyInspectionsProps {
   onView?: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  loading?: boolean;
 }
 
 export default function DailyInspections({
@@ -27,6 +28,7 @@ export default function DailyInspections({
   onView,
   onEdit,
   onDelete,
+  loading = false,
 }: DailyInspectionsProps) {
   // Variaciones de color para badges
   const statusStyles = {
@@ -47,7 +49,28 @@ export default function DailyInspections({
 
         {/* Lista de Inspecciones */}
         <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-y-auto pr-1">
-          {inspections.map((item) => (
+          {loading && (
+            <>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="animate-pulse p-4 rounded-2xl bg-[#F4EFE6]/60 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 flex flex-col gap-3 shrink-0"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 w-12 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-4 w-20 rounded-full bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-3 w-1/2 rounded bg-gray-100 dark:bg-gray-700/60" />
+                  </div>
+                  <div className="h-3 w-2/3 rounded bg-gray-100 dark:bg-gray-700/60" />
+                </div>
+              ))}
+            </>
+          )}
+
+          {!loading && inspections.map((item) => (
             <div
               key={item.id}
               className="p-4 rounded-2xl bg-[#F4EFE6]/60 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 flex flex-col gap-2 transition-colors shrink-0"
@@ -120,7 +143,7 @@ export default function DailyInspections({
             </div>
           ))}
 
-          {inspections.length === 0 && (
+          {!loading && inspections.length === 0 && (
             <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-6">
               No hay citas programadas para este día.
             </p>

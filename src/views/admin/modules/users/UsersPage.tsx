@@ -30,6 +30,12 @@ import type {
   CreateEmployeePayload,
 } from "../../../../types/employee";
 import UserForm from "./Form";
+import { pdf } from "@react-pdf/renderer";
+import {
+  ReportPdfDocument,
+  type ReportPdfRow,
+} from "../../../../pdf/ReportPdfDocument";
+import { triggerPdfDownload } from "../../../../pdf/downloadPdf";
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (!isAxiosError(error)) return fallback;
@@ -305,50 +311,37 @@ export default function UsersPage() {
     }
   };
 
-  const handleDownload = (user: User) => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      showToast(
-        "error",
-        "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
-      );
-      return;
-    }
-    const escapeHtml = (value: string) =>
-      value
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+  const handleDownload = async (user: User) => {
+    const rows: ReportPdfRow[] = [
+      { cells: ["Código", user.code] },
+      { cells: ["Nombre", user.name] },
+      { cells: ["Correo", user.email] },
+      { cells: ["Rol", user.role] },
+      { cells: ["Estado", user.status] },
+      { cells: ["Fecha de registro", user.joinedDate] },
+      { cells: ["DUI", user.dui || "No registrado"] },
+      { cells: ["Fecha de contratación", user.hireDate || "No registrada"] },
+      { cells: ["Departamento", user.department || "No registrado"] },
+      { cells: ["Municipio", user.municipality || "No registrado"] },
+      { cells: ["Dirección", user.address || "No registrada"] },
+    ];
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="es">
-        <head>
-          <title>Ficha de ${escapeHtml(user.name)}</title>
-          <style>
-            body { font-family: system-ui, sans-serif; padding: 32px; color: #1f2937; }
-            dl { display: grid; grid-template-columns: 180px 1fr; gap: 12px; }
-            dt { font-weight: 700; } dd { margin: 0; }
-          </style>
-        </head>
-        <body>
-          <h1>Ficha del colaborador</h1>
-          <dl>
-            <dt>Código</dt><dd>${escapeHtml(user.code)}</dd>
-            <dt>Nombre</dt><dd>${escapeHtml(user.name)}</dd>
-            <dt>Correo</dt><dd>${escapeHtml(user.email)}</dd>
-            <dt>Rol</dt><dd>${escapeHtml(user.role)}</dd>
-            <dt>Estado</dt><dd>${escapeHtml(user.status)}</dd>
-            <dt>Fecha de registro</dt><dd>${escapeHtml(user.joinedDate)}</dd>
-          </dl>
-          <script>window.onload = function() { window.print(); window.close(); };</script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    showToast("info", "Ficha del colaborador generada correctamente");
+    const pdfBlob = await pdf(
+      <ReportPdfDocument
+        reportTitle="Ficha del Colaborador"
+        subtitle={user.name}
+        dateRangeLabel={`Colaborador ${user.code}`}
+        headers={["Campo", "Detalle"]}
+        rows={rows}
+        orientation="portrait"
+      />,
+    ).toBlob();
+
+    triggerPdfDownload(
+      pdfBlob,
+      `Colaborador_${user.code}_${new Date().toISOString().slice(0, 10)}.pdf`,
+    );
+    showToast("success", "Ficha del colaborador generada correctamente");
   };
 
   const roleOptions = useMemo<SelectOption[]>(() => {
@@ -377,7 +370,7 @@ export default function UsersPage() {
     [searchTerm, selectedRole, users],
   );
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const dataToExport =
       exportScope === "ALL"
         ? users
@@ -420,59 +413,38 @@ export default function UsersPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } else {
-      const escapeHtml = (value: string) =>
-        value
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        showToast(
-          "error",
-          "No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.",
-        );
-        return;
-      }
+      const rows: ReportPdfRow[] = dataToExport.map((user) => ({
+        cells: [
+          user.code,
+          `${user.name} / ${user.email}`,
+          user.role,
+          user.status,
+          user.joinedDate,
+        ],
+      }));
 
-      const tableRows = dataToExport
-        .map(
-          (user) => `
-            <tr>
-              <td>${escapeHtml(user.code)}</td>
-              <td><b>${escapeHtml(user.name)}</b><br><small>${escapeHtml(user.email)}</small></td>
-              <td>${escapeHtml(user.role)}</td>
-              <td>${escapeHtml(user.status)}</td>
-              <td>${escapeHtml(user.joinedDate)}</td>
-            </tr>`,
-        )
-        .join("");
+      const pdfBlob = await pdf(
+        <ReportPdfDocument
+          reportTitle="Reporte de Colaboradores"
+          subtitle={`Alcance: ${
+            exportScope === "ALL" ? "Todos" : exportScope
+          }`}
+          dateRangeLabel={new Date().toLocaleDateString("es-SV")}
+          headers={[
+            "Código",
+            "Colaborador",
+            "Rol",
+            "Estado",
+            "Fecha de registro",
+          ]}
+          rows={rows}
+        />,
+      ).toBlob();
 
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="es">
-          <head>
-            <title>Reporte de Colaboradores (${escapeHtml(exportScope)})</title>
-            <style>
-              body { font-family: system-ui, sans-serif; padding: 20px; }
-              table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-              th, td { padding: 8px; border-bottom: 1px solid #eee; }
-              th { background: #f3f4f6; border-bottom: 2px solid #ccc; }
-            </style>
-          </head>
-          <body>
-            <h2>Reporte de Colaboradores (${escapeHtml(exportScope.toUpperCase())})</h2>
-            <p>Fecha: ${new Date().toLocaleDateString("es-SV")}</p>
-            <table>
-              <thead><tr><th>Código</th><th>Colaborador</th><th>Rol</th><th>Estado</th><th>Fecha de registro</th></tr></thead>
-              <tbody>${tableRows}</tbody>
-            </table>
-            <script>window.onload = function() { window.print(); window.close(); };</script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+      triggerPdfDownload(
+        pdfBlob,
+        `Colaboradores_${exportScope}_${new Date().toISOString().slice(0, 10)}.pdf`,
+      );
     }
 
     setExportOpen(false);
@@ -518,9 +490,9 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="w-full flex flex-col gap-6 p-4 sm:p-6 font-sans">
+    <div className="w-full h-[calc(100dvh-5rem)] md:h-[calc(100dvh-3rem)] flex flex-col gap-5 p-4 sm:p-6 font-sans overflow-hidden">
       {/* HEADER DE LA VISTA */}
-      <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
+      <div className="shrink-0 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200/60 dark:border-gray-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
             Gestión de Colaboradores
@@ -533,7 +505,7 @@ export default function UsersPage() {
       </div>
 
       {/* FILTROS Y ACCIONES SUPERIORES */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div className="shrink-0 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           {/* Buscador de colaboradores */}
           <div className="relative flex-1 min-w-[240px]">
@@ -585,7 +557,7 @@ export default function UsersPage() {
                 className="fixed inset-0 z-40"
                 onClick={() => setExportOpen(false)}
               />
-              <div className="absolute right-4 mt-2 z-50 w-64 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">
                   Formato
                 </p>
@@ -654,12 +626,12 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* CONTENEDOR DE LA TABLA (CON SCROLL HORIZONTAL EN MÓVIL) */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden transition-colors">
-        <div className="overflow-x-auto">
+      {/* CONTENEDOR DE LA TABLA (SCROLL INTERNO EN TABLA) */}
+      <div className="flex-1 min-h-0 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-3xl shadow-sm overflow-hidden flex flex-col transition-colors">
+        <div className="flex-1 min-h-0 overflow-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="bg-gray-50/70 dark:bg-gray-900/50 border-b border-gray-200/60 dark:border-gray-700/60 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gray-50/90 dark:bg-gray-900/90 border-b border-gray-200/60 dark:border-gray-700/60 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <th className="py-4 px-6">CÓDIGO</th>
                 <th className="py-4 px-6">USUARIO</th>
                 <th className="py-4 px-6">ROL</th>
@@ -913,7 +885,7 @@ export default function UsersPage() {
       )}
 
       {/* PAGINACIÓN */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+      <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
         <span className="text-xs text-gray-500 dark:text-gray-400 order-2 sm:order-1">
           Mostrando {visibleUsers.length} de {filteredUsers.length}{" "}
           colaboradores

@@ -49,33 +49,6 @@ const STATUS_BADGES: Record<string, { label: string; className: string }> = {
   },
 };
 
-function InspectionsSkeleton() {
-  return (
-    <div className="w-full rounded-3xl bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 overflow-hidden shadow-sm animate-pulse">
-      <div className="h-12 bg-[#ECE6DB] dark:bg-gray-900/90" />
-      <div className="divide-y divide-gray-100 dark:divide-gray-700/60">
-        {Array.from({ length: 6 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="px-6 py-4 flex items-center justify-between gap-4"
-          >
-            <div className="space-y-1.5">
-              <div className="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700" />
-              <div className="h-3 w-16 rounded bg-gray-100 dark:bg-gray-700/60" />
-            </div>
-            <div className="space-y-1.5 flex-1 max-w-xs">
-              <div className="h-4 w-44 rounded bg-gray-200 dark:bg-gray-700" />
-              <div className="h-3 w-36 rounded bg-gray-100 dark:bg-gray-700/60" />
-            </div>
-            <div className="h-5 w-24 rounded-full bg-gray-200 dark:bg-gray-700" />
-            <div className="h-8 w-28 rounded-xl bg-gray-200 dark:bg-gray-700" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function InspectionsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [statusFilter, setStatusFilter] =
