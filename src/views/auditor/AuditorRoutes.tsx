@@ -9,6 +9,7 @@ import Dashboard from "./Dashboard";
 import HistoryPage from "./modules/history/HistoryPage";
 import ProfilePage from "./modules/profile/ProfilePage";
 import TransactionsPage from "./modules/transactions/TransactionsPage";
+import AuditLogView from "../../components/audit/page";
 
 export default function AuditorRoutes() {
   return (
@@ -18,6 +19,7 @@ export default function AuditorRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
+        <Route path="audit" element={<AuditLogView />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
