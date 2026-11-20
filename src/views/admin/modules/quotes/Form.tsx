@@ -6,21 +6,23 @@ import SearchableSelect, { type SelectOption } from "../../../../components/Sear
 import { getCustomers } from "../../../../services/customerService";
 import { getSubscriptionPlans } from "../../../../services/subscriptionPlanService";
 import { getPlants } from "../../../../services/plantService";
-import { createQuote, getQuoteErrorMessage } from "../../../../services/quoteService";
+import { createQuote, getQuoteErrorMessage, updateQuote } from "../../../../services/quoteService";
 import type { CustomerListItem } from "../../../../types/customer";
 import type { SubscriptionPlan } from "../../../../types/customer";
 import type { Plant } from "../../../../types/plant";
-import type { CreateQuotePayload, CreateQuoteItemPayload } from "../../../../types/quote";
+import type { CreateQuotePayload, CreateQuoteItemPayload, Quote } from "../../../../types/quote";
 
 interface QuoteFormProps {
   onClose: () => void;
   onSaved: () => void;
+  initialData?: Quote | null;
 }
 
 interface QuoteItemRow {
   itemType: "service" | "plant";
   serviceId: string;
   plantId: string;
+  name: string;
   quantity: string;
   unitPrice: string;
 }
@@ -35,20 +37,30 @@ const decimalNumber = (value: string) => {
 };
 
 const emptyItem = (): QuoteItemRow => ({
-  itemType: "service",
+  itemType: "plant",
   serviceId: "",
   plantId: "",
+  name: "",
   quantity: "1",
   unitPrice: "",
 });
 
-export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
-  const [customerId, setCustomerId] = useState("");
-  const [planId, setPlanId] = useState("");
-  const [includesVat, setIncludesVat] = useState(false);
-  const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState("0");
-  const [status, setStatus] = useState<"pending" | "paid">("pending");
-  const [items, setItems] = useState<QuoteItemRow[]>([emptyItem()]);
+export default function QuoteForm({ onClose, onSaved, initialData }: QuoteFormProps) {
+  const [customerId, setCustomerId] = useState(() => String(initialData?.customerId ?? ""));
+  const [planId, setPlanId] = useState(() => String(initialData?.appliedPlanId ?? ""));
+  const [includesVat, setIncludesVat] = useState(() => initialData?.includesVat ?? false);
+  const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(() => String(initialData?.loyaltyPointsUsed ?? 0));
+  const [status, setStatus] = useState<"pending" | "paid">(() => initialData?.status ?? "pending");
+  const [items, setItems] = useState<QuoteItemRow[]>(() => initialData?.items.length
+    ? initialData.items.map((item) => ({
+        itemType: item.itemType === "plant" ? "plant" : "service",
+        serviceId: item.serviceId == null ? "" : String(item.serviceId),
+        plantId: item.plantId == null ? "" : String(item.plantId),
+        name: item.name ?? "",
+        quantity: String(item.quantity),
+        unitPrice: String(item.unitPrice),
+      }))
+    : [emptyItem()]);
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -90,16 +102,31 @@ export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
     label: customer.tradeName || customer.legalName,
     value: String(customer.id),
   }));
+  if (initialData?.customerId && !customerOptions.some((option) => option.value === String(initialData.customerId))) {
+    customerOptions.push({ label: initialData.customerName || `Cliente ${initialData.customerId}`, value: String(initialData.customerId) });
+  }
 
   const planOptions: SelectOption[] = plans.map((plan) => ({
     label: plan.planName || plan.planCode || `Plan ${plan.id}`,
     value: String(plan.id),
   }));
+  if (initialData?.appliedPlanId && !planOptions.some((option) => option.value === String(initialData.appliedPlanId))) {
+    planOptions.push({ label: initialData.planName || `Plan ${initialData.appliedPlanId}`, value: String(initialData.appliedPlanId) });
+  }
 
   const plantOptions: SelectOption[] = plants.map((plant) => ({
     label: `${plant.name} — $${Number(plant.price).toFixed(2)}`,
     value: String(plant.id),
   }));
+
+  items.forEach((item) => {
+    if (item.itemType === "plant" && item.plantId && !plantOptions.some((option) => option.value === item.plantId)) {
+      plantOptions.push({
+        label: `${item.name || `Planta ${item.plantId}`} — $${Number(item.unitPrice).toFixed(2)}`,
+        value: item.plantId,
+      });
+    }
+  });
 
   const updateItem = (index: number, patch: Partial<QuoteItemRow>) => {
     setItems((current) =>
@@ -115,11 +142,11 @@ export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
     if (!planId) validation.planId = "Selecciona un plan de suscripción.";
 
     items.forEach((item, index) => {
-      if (item.itemType === "service" && !item.serviceId) {
-        validation[`service_${index}`] = "Ingresa el ID del servicio.";
-      }
       if (item.itemType === "plant" && !item.plantId) {
         validation[`plant_${index}`] = "Selecciona una planta.";
+      }
+      if (item.itemType === "service" && !item.serviceId) {
+        validation[`service_${index}`] = "No se reconoce el servicio de esta cotización.";
       }
       if (!item.quantity || Number(item.quantity) <= 0) {
         validation[`quantity_${index}`] = "La cantidad debe ser mayor a cero.";
@@ -147,10 +174,10 @@ export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
         unit_price: Number(item.unitPrice),
       };
 
-      if (item.itemType === "service") {
-        payload.service_id = Number(item.serviceId);
-      } else {
+      if (item.itemType === "plant") {
         payload.plant_id = Number(item.plantId);
+      } else {
+        payload.service_id = Number(item.serviceId);
       }
       return payload;
     });
@@ -165,17 +192,20 @@ export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
     };
 
     try {
-      console.log("Payload para POST /quotes:", payload);
-      await createQuote(payload);
+      if (initialData) {
+        await updateQuote(initialData.id, payload);
+      } else {
+        await createQuote(payload);
+      }
       onSaved();
       onClose();
     } catch (error) {
-      console.error("Error al crear la cotización:", error);
+      console.error("Error al guardar la cotización:", error);
       if (typeof error === "object" && error !== null && "response" in error) {
-        console.error("Respuesta 422 del backend:", (error as { response?: { data?: unknown } }).response?.data);
+        console.error("Respuesta de validación del backend:", (error as { response?: { data?: unknown } }).response?.data);
       }
       setErrorMessage(
-        getQuoteErrorMessage(error, "No se pudo registrar la cotización."),
+        getQuoteErrorMessage(error, initialData ? "No se pudo actualizar la cotización." : "No se pudo registrar la cotización."),
       );
     } finally {
       setSaving(false);
@@ -198,10 +228,10 @@ export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
         <header className="flex items-center justify-between gap-3 border-b border-gray-100 p-4 dark:border-gray-700 sm:p-6">
           <div>
             <h2 id="quote-form-title" className="text-lg font-bold text-gray-900 dark:text-gray-100 sm:text-xl">
-              Nueva cotización
+              {initialData ? `Editar cotización ${initialData.code}` : "Nueva cotización"}
             </h2>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
-              Completa los datos. Los montos se calcularán en el backend.
+              Puedes actualizar los datos y conservar los servicios existentes. Los nuevos ítems deben ser plantas registradas.
             </p>
           </div>
           <button
@@ -307,43 +337,25 @@ export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
 
                   <div className="space-y-3">
                     {items.map((item, index) => (
-                      <div key={index} className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 p-3 dark:border-gray-700 sm:grid-cols-2 lg:grid-cols-[130px_1fr_110px_140px_44px]">
+                      <div key={index} className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 p-3 dark:border-gray-700 sm:grid-cols-2 lg:grid-cols-[1fr_110px_140px_44px]">
                         <div>
-                          <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">Tipo</label>
-                          <SearchableSelect
-                            options={[{ label: "Servicio", value: "service" }, { label: "Planta", value: "plant" }]}
-                            value={item.itemType}
-                            onChange={(value) => updateItem(index, { itemType: value as "service" | "plant", serviceId: "", plantId: "" })}
-                            className="max-w-none"
-                          />
-                        </div>
-
-                        {item.itemType === "service" ? (
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">ID del servicio *</label>
-                            <Input
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={10}
-                              value={item.serviceId}
-                              onChange={(event) => updateItem(index, { serviceId: onlyDigits(event.target.value) })}
-                              placeholder="Ej. 1"
-                              error={errors[`service_${index}`]}
-                            />
-                          </div>
-                        ) : (
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">Planta *</label>
+                          <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">{item.itemType === "plant" ? "Planta *" : "Servicio existente"}</label>
+                          {item.itemType === "plant" ? (
                             <SearchableSelect
                               options={plantOptions}
                               value={item.plantId}
-                              onChange={(value) => updateItem(index, { plantId: value, unitPrice: plants.find((plant) => String(plant.id) === value)?.price.toString() || item.unitPrice })}
+                              onChange={(value) => updateItem(index, { plantId: value, name: plants.find((plant) => String(plant.id) === value)?.name ?? item.name, unitPrice: plants.find((plant) => String(plant.id) === value)?.price.toString() || item.unitPrice })}
                               placeholder="Selecciona una planta"
                               className="max-w-none"
                             />
-                            {errors[`plant_${index}`] && <p className="mt-1 text-xs text-rose-500">{errors[`plant_${index}`]}</p>}
-                          </div>
-                        )}
+                          ) : (
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                              {item.name || `Servicio #${item.serviceId}`}
+                            </div>
+                          )}
+                          {errors[`plant_${index}`] && <p className="mt-1 text-xs text-rose-500">{errors[`plant_${index}`]}</p>}
+                          {errors[`service_${index}`] && <p className="mt-1 text-xs text-rose-500">{errors[`service_${index}`]}</p>}
+                        </div>
 
                         <div>
                           <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-300">Cantidad *</label>
@@ -392,7 +404,7 @@ export default function QuoteForm({ onClose, onSaved }: QuoteFormProps) {
               Cancelar
             </Button>
             <Button type="submit" disabled={loading || saving} className="w-full sm:w-auto">
-              {saving ? "Guardando..." : "Registrar cotización"}
+              {saving ? "Guardando..." : initialData ? "Guardar cambios" : "Registrar cotización"}
             </Button>
           </footer>
         </form>

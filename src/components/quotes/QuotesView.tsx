@@ -2,14 +2,15 @@
 // Vista reutilizable de cotizaciones. Los datos provienen del API; la navegación
 // a "nueva cotización" la resuelve el rol que monta esta vista.
 import { useEffect, useState } from "react";
-import { Search, Download, Plus, RefreshCw, Loader2 } from "lucide-react";
+import { Search, Download, Plus, RefreshCw, Loader2, Eye, Edit2, Trash2, X } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import QuotesPdfDocument from "../../pdf/QuotesPdfDocument";
 import Button from "../Button";
 import Input from "../Input";
 import Table, { type Column } from "../Table";
 import SearchableSelect, { type SelectOption } from "../SearchableSelect";
-import { getQuotes, getQuoteErrorMessage } from "../../services/quoteService";
+import { deleteQuote, getQuoteById, getQuotes, getQuoteErrorMessage } from "../../services/quoteService";
+import ConfirmDialog from "../ConfirmDialog";
 import type { Quote as ApiQuote, QuoteStatus } from "../../types/quote";
 
 export type QuoteStatusView = "Aprobada" | "Pendiente";
@@ -22,6 +23,7 @@ export interface Quote {
   services: string;
   amount: string;
   status: QuoteStatusView;
+  details: ApiQuote;
 }
 
 export interface QuotesViewProps {
@@ -29,6 +31,7 @@ export interface QuotesViewProps {
   subtitle?: string;
   searchPlaceholder?: string;
   onNewQuote?: () => void;
+  onEditQuote?: (quote: ApiQuote) => void;
 }
 
 const STATUS_OPTIONS: SelectOption[] = [
@@ -75,6 +78,7 @@ const toViewQuote = (quote: ApiQuote): Quote => {
     services: services || "Sin ítems",
     amount: formatCurrency(quote.total),
     status: quote.status === "paid" ? "Aprobada" : "Pendiente",
+    details: quote,
   };
 };
 
@@ -154,6 +158,7 @@ export default function QuotesView({
   subtitle = "Revisa, aprueba y genera presupuestos de servicios de jardinería",
   searchPlaceholder = "Buscar cliente o servicio...",
   onNewQuote,
+  onEditQuote,
 }: QuotesViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -164,6 +169,11 @@ export default function QuotesView({
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [selectedQuote, setSelectedQuote] = useState<ApiQuote | null>(null);
+  const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [loadingEditId, setLoadingEditId] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -243,7 +253,83 @@ export default function QuotesView({
         </span>
       ),
     },
+    {
+      header: "ACCIONES",
+      className: "whitespace-nowrap",
+      render: (item) => (
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            title="Ver cotización"
+            aria-label={`Ver cotización ${item.code}`}
+            onClick={() => setSelectedQuote(item.details)}
+            className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-[#5b642a] dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-[#a3b355]"
+          >
+            <Eye size={17} />
+          </button>
+          {onEditQuote && (
+            <button
+              type="button"
+              title="Editar cotización"
+              aria-label={`Editar cotización ${item.code}`}
+              onClick={() => void handleEditQuote(item)}
+              disabled={loadingEditId !== null}
+              className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-[#5b642a] disabled:cursor-wait disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-[#a3b355]"
+            >
+              {loadingEditId === item.id ? <Loader2 className="animate-spin" size={17} /> : <Edit2 size={17} />}
+            </button>
+          )}
+          <button
+            type="button"
+            title="Eliminar cotización"
+            aria-label={`Eliminar cotización ${item.code}`}
+            onClick={() => setQuoteToDelete(item)}
+            className="rounded-lg p-2 text-gray-500 transition hover:bg-rose-50 hover:text-rose-600 dark:text-gray-400 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
+          >
+            <Trash2 size={17} />
+          </button>
+        </div>
+      ),
+    },
   ];
+
+  const handleDeleteQuote = async () => {
+    if (!quoteToDelete) return;
+    setDeleting(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+    try {
+      await deleteQuote(quoteToDelete.id);
+      setQuoteToDelete(null);
+      setSuccessMessage(`La cotización ${quoteToDelete.code} fue eliminada.`);
+      if (quotes.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1);
+      } else {
+        setReloadKey((key) => key + 1);
+      }
+    } catch (error) {
+      setErrorMessage(getQuoteErrorMessage(error, "No se pudo eliminar la cotización."));
+      setQuoteToDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleEditQuote = async (quote: Quote) => {
+    if (!onEditQuote) return;
+    setLoadingEditId(quote.id);
+    setErrorMessage("");
+    try {
+      const response = await getQuoteById(quote.id);
+      onEditQuote(response.data);
+    } catch (error) {
+      setErrorMessage(
+        getQuoteErrorMessage(error, "No se pudieron cargar los datos de la cotización."),
+      );
+    } finally {
+      setLoadingEditId(null);
+    }
+  };
 
   const handleDownloadPdf = async () => {
     setDownloadingPdf(true);
@@ -339,6 +425,12 @@ export default function QuotesView({
         </div>
       )}
 
+      {successMessage && (
+        <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+          {successMessage}
+        </div>
+      )}
+
       <div className="w-full overflow-x-auto rounded-lg">
         {loading ? (
           <QuotesTableSkeleton />
@@ -366,6 +458,72 @@ export default function QuotesView({
           totalItems={totalItems}
         />
       </div>
+
+      {selectedQuote && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedQuote(null);
+          }}
+        >
+          <section role="dialog" aria-modal="true" aria-labelledby="quote-details-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-gray-100 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-gray-800 sm:p-7">
+            <header className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="quote-details-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">Cotización {selectedQuote.code}</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Detalle de la cotización</p>
+              </div>
+              <button type="button" aria-label="Cerrar detalle" onClick={() => setSelectedQuote(null)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200">
+                <X size={19} />
+              </button>
+            </header>
+
+            <dl className="grid grid-cols-1 gap-4 rounded-2xl bg-gray-50 p-4 text-sm dark:bg-gray-900/50 sm:grid-cols-2">
+              <div><dt className="text-gray-500 dark:text-gray-400">Cliente</dt><dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedQuote.customerName || "Sin cliente"}</dd></div>
+              <div><dt className="text-gray-500 dark:text-gray-400">Plan</dt><dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedQuote.planName || "—"}</dd></div>
+              <div><dt className="text-gray-500 dark:text-gray-400">Fecha</dt><dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{formatDate(selectedQuote.createdAt)}</dd></div>
+              <div><dt className="text-gray-500 dark:text-gray-400">Estado</dt><dd className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedQuote.status === "paid" ? "Pagada" : "Pendiente"}</dd></div>
+            </dl>
+
+            <h3 className="mb-3 mt-6 text-sm font-bold text-gray-900 dark:text-gray-100">Ítems</h3>
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
+                  <tr><th className="px-4 py-3">Descripción</th><th className="px-4 py-3">Cant.</th><th className="px-4 py-3">Precio</th><th className="px-4 py-3">Total</th></tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {selectedQuote.items.map((item, index) => (
+                    <tr key={item.id ?? `${item.name ?? "item"}-${index}`}>
+                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{item.name || (item.itemType === "plant" ? "Planta" : "Servicio")}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.quantity}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{formatCurrency(item.unitPrice)}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item.total)}</td>
+                    </tr>
+                  ))}
+                  {selectedQuote.items.length === 0 && <tr><td colSpan={4} className="px-4 py-5 text-center text-gray-500">Sin ítems registrados.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
+            <dl className="ml-auto mt-5 w-full max-w-xs space-y-2 text-sm">
+              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300"><dt>Subtotal</dt><dd>{formatCurrency(selectedQuote.subtotal)}</dd></div>
+              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300"><dt>Descuento</dt><dd>{formatCurrency(selectedQuote.discountAmount)}</dd></div>
+              <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-300"><dt>IVA</dt><dd>{formatCurrency(selectedQuote.vatAmount)}</dd></div>
+              <div className="flex justify-between gap-4 border-t border-gray-200 pt-2 text-base font-bold text-gray-900 dark:border-gray-700 dark:text-gray-100"><dt>Total</dt><dd>{formatCurrency(selectedQuote.total)}</dd></div>
+            </dl>
+          </section>
+        </div>
+      )}
+
+      <ConfirmDialog
+        isOpen={quoteToDelete !== null}
+        title="Eliminar cotización"
+        message={`¿Seguro que deseas eliminar la cotización ${quoteToDelete?.code ?? "seleccionada"}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        loading={deleting}
+        onConfirm={() => void handleDeleteQuote()}
+        onCancel={() => { if (!deleting) setQuoteToDelete(null); }}
+      />
     </div>
   );
 }

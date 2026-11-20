@@ -25,9 +25,24 @@ const readNumber = (value: unknown, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const unwrapData = (value: unknown) => {
+  let current = value;
+  for (let depth = 0; depth < 3; depth += 1) {
+    const wrapper = record(current);
+    if (wrapper.data != null) {
+      current = wrapper.data;
+    } else if (wrapper.quote != null) {
+      current = wrapper.quote;
+    } else {
+      break;
+    }
+  }
+  return current;
+};
+
 const normalizeItem = (value: unknown) => {
   const item = record(value);
-  const itemType = readText(item.item_type ?? item.itemType);
+  const itemType = readText(item.item_type ?? item.itemType ?? item.type);
   const service = record(item.service);
   const plant = record(item.plant);
   const name =
@@ -37,9 +52,15 @@ const normalizeItem = (value: unknown) => {
 
   return {
     id: item.id == null ? undefined : readNumber(item.id),
-    itemType: itemType === "plant" ? ("plant" as const) : ("service" as const),
-    serviceId: item.service_id == null ? undefined : readNumber(item.service_id),
-    plantId: item.plant_id == null ? undefined : readNumber(item.plant_id),
+    itemType: itemType === "plant" || item.plant_id != null || item.plantId != null || item.plant
+      ? ("plant" as const)
+      : ("service" as const),
+    serviceId: item.service_id == null && item.serviceId == null && service.id == null
+      ? undefined
+      : readNumber(item.service_id ?? item.serviceId ?? service.id),
+    plantId: item.plant_id == null && item.plantId == null && plant.id == null
+      ? undefined
+      : readNumber(item.plant_id ?? item.plantId ?? plant.id),
     name,
     quantity: readNumber(item.quantity),
     unitPrice: readNumber(item.unit_price ?? item.unitPrice),
@@ -50,26 +71,30 @@ const normalizeItem = (value: unknown) => {
 const normalizeQuote = (value: unknown): Quote => {
   const quote = record(value);
   const customer = record(quote.customer);
-  const plan = record(quote.applied_plan ?? quote.subscription_plan);
+  const plan = record(quote.applied_plan ?? quote.appliedPlan ?? quote.subscription_plan ?? quote.subscriptionPlan);
   const employee = record(quote.employee);
-  const itemsValue = Array.isArray(quote.items) ? quote.items : [];
+  const itemsValue = Array.isArray(quote.items)
+    ? quote.items
+    : Array.isArray(quote.quote_items)
+      ? quote.quote_items
+      : [];
   const statusValue = readText(quote.status, "pending");
 
   return {
     id: readNumber(quote.id),
     code: readText(quote.code ?? quote.quote_code ?? `COT-${quote.id ?? ""}`),
     customerId:
-      quote.customer_id == null && quote.customerId == null
+      quote.customer_id == null && quote.customerId == null && customer.id == null
         ? null
-        : readNumber(quote.customer_id ?? quote.customerId),
+        : readNumber(quote.customer_id ?? quote.customerId ?? customer.id),
     customerName:
       readText(customer.legal_name ?? customer.legalName) ||
       readText(customer.trade_name ?? customer.tradeName) ||
       readText(quote.customer_name ?? quote.customerName, "Sin cliente"),
     appliedPlanId:
-      quote.applied_plan_id == null && quote.appliedPlanId == null
+      quote.applied_plan_id == null && quote.appliedPlanId == null && quote.subscription_plan_id == null && plan.id == null
         ? null
-        : readNumber(quote.applied_plan_id ?? quote.appliedPlanId),
+        : readNumber(quote.applied_plan_id ?? quote.appliedPlanId ?? quote.subscription_plan_id ?? plan.id),
     planName:
       readText(plan.plan_name ?? plan.planName) ||
       readText(quote.plan_name ?? quote.planName),
@@ -127,8 +152,7 @@ export const getQuotes = async (
 
 export const getQuoteById = async (id: number | string): Promise<{ data: Quote }> => {
   const response = await api.get<unknown>(`/quotes/${id}`);
-  const payload = record(response.data);
-  return { data: normalizeQuote(payload.data ?? payload.quote ?? payload) };
+  return { data: normalizeQuote(unwrapData(response.data)) };
 };
 
 export const createQuote = async (payload: CreateQuotePayload): Promise<{ data: Quote }> => {
