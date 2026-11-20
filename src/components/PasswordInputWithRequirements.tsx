@@ -24,7 +24,7 @@ export default function PasswordInputWithRequirements({
     upper: /[A-Z]/.test(value),
     lower: /[a-z]/.test(value),
     number: /[0-9]/.test(value),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value),
+    special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?]/.test(value),
   };
 
   const requirements = [

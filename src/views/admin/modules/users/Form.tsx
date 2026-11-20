@@ -6,6 +6,10 @@ import Input from "../../../../components/Input";
 import SearchableSelect, {
   type SelectOption,
 } from "../../../../components/SearchableSelect";
+import {
+  departamentoOptions,
+  MUNICIPIOS_POR_DEPARTAMENTO,
+} from "../../../../components/clients/catalogoUbicacion";
 import { getRoles } from "../../../../services/roleService";
 import type { CreateEmployeePayload } from "../../../../types/employee";
 import type { Role } from "../../../../types/role";
@@ -21,7 +25,6 @@ interface UserFormProps {
 
 const DUI_REGEX = /^\d{8}-\d$/;
 const PHONE_REGEX = /^\d{4}-\d{4}$/;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const onlyDigits = (value: string, max: number) =>
   value.replace(/\D/g, "").slice(0, max);
@@ -128,6 +131,21 @@ export default function UserForm({
     { label: "Activo", value: "true" },
     { label: "Inactivo", value: "false" },
   ];
+
+  const municipios =
+    MUNICIPIOS_POR_DEPARTAMENTO[formData.department || ""] ?? [];
+  const municipioOptions: SelectOption[] = municipios.map((municipio) => ({
+    label: municipio,
+    value: municipio,
+  }));
+  const municipioActual = formData.municipality?.trim();
+  if (municipioActual && !municipios.includes(municipioActual)) {
+    municipioOptions.unshift({
+      label: municipioActual,
+      value: municipioActual,
+      description: "Municipio registrado anteriormente",
+    });
+  }
 
   const clearError = (field: string) =>
     setErrors((prev) => {
@@ -329,13 +347,18 @@ export default function UserForm({
               <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                 Departamento
               </label>
-              <Input
-                type="text"
-                placeholder="San Salvador"
+              <SearchableSelect
+                options={departamentoOptions}
                 value={formData.department || ""}
-                onChange={(event) =>
-                  setFormData({ ...formData, department: event.target.value })
+                onChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    department: value,
+                    municipality: "",
+                  })
                 }
+                placeholder="Selecciona un departamento"
+                className="max-w-none"
               />
             </div>
 
@@ -343,13 +366,18 @@ export default function UserForm({
               <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                 Municipio
               </label>
-              <Input
-                type="text"
-                placeholder="San Salvador"
+              <SearchableSelect
+                options={municipioOptions}
                 value={formData.municipality || ""}
-                onChange={(event) =>
-                  setFormData({ ...formData, municipality: event.target.value })
+                onChange={(value) =>
+                  setFormData({ ...formData, municipality: value })
                 }
+                placeholder={
+                  formData.department
+                    ? "Selecciona un municipio"
+                    : "Selecciona primero un departamento"
+                }
+                className="max-w-none"
               />
             </div>
           </div>

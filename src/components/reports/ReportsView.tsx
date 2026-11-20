@@ -1,5 +1,5 @@
 // src/components/reports/ReportsView.tsx
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { isAxiosError } from "axios";
 import {
@@ -166,45 +166,46 @@ export default function ReportsView({
   const [isLoadingAnnual, setIsLoadingAnnual] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
-  const loadKpis = useCallback(async () => {
-    setIsLoadingKpis(true);
-    setErrorMessage("");
-    try {
-      const dateParams = {
-        from: fromDate || undefined,
-        to: toDate || undefined,
-      };
-      const [salesRes, profRes] = await Promise.all([
-        getSalesReport(dateParams),
-        getProfitabilityReport(dateParams),
-      ]);
-
-      setKpiSales(salesRes.meta?.summary?.totalSales ?? 0);
-      setKpiPaid(salesRes.meta?.summary?.totalPaid ?? 0);
-      setKpiPending(salesRes.meta?.summary?.totalPending ?? 0);
-      setKpiMargin(profRes.meta?.summary?.averageMarginPercentage ?? 0);
-    } catch (error) {
-      if (isAxiosError(error)) {
-        if (error.response?.status === 403) {
-          setErrorMessage(
-            "No tienes permisos para consultar los reportes analíticos.",
-          );
-        } else {
-          const msg = (error.response?.data as { message?: string } | undefined)
-            ?.message;
-          setErrorMessage(msg || "No se pudieron cargar los indicadores.");
-        }
-      } else {
-        setErrorMessage("No se pudieron cargar los indicadores.");
-      }
-    } finally {
-      setIsLoadingKpis(false);
-    }
-  }, [fromDate, toDate]);
-
   useEffect(() => {
+    const loadKpis = async () => {
+      setIsLoadingKpis(true);
+      setErrorMessage("");
+      try {
+        const dateParams = {
+          from: fromDate || undefined,
+          to: toDate || undefined,
+        };
+        const [salesRes, profRes] = await Promise.all([
+          getSalesReport(dateParams),
+          getProfitabilityReport(dateParams),
+        ]);
+
+        setKpiSales(salesRes.meta?.summary?.totalSales ?? 0);
+        setKpiPaid(salesRes.meta?.summary?.totalPaid ?? 0);
+        setKpiPending(salesRes.meta?.summary?.totalPending ?? 0);
+        setKpiMargin(profRes.meta?.summary?.averageMarginPercentage ?? 0);
+      } catch (error) {
+        if (isAxiosError(error)) {
+          if (error.response?.status === 403) {
+            setErrorMessage(
+              "No tienes permisos para consultar los reportes analíticos.",
+            );
+          } else {
+            const msg = (
+              error.response?.data as { message?: string } | undefined
+            )?.message;
+            setErrorMessage(msg || "No se pudieron cargar los indicadores.");
+          }
+        } else {
+          setErrorMessage("No se pudieron cargar los indicadores.");
+        }
+      } finally {
+        setIsLoadingKpis(false);
+      }
+    };
+
     void loadKpis();
-  }, [loadKpis]);
+  }, [fromDate, toDate]);
 
   useEffect(() => {
     if (activeTab !== "explorer") return;

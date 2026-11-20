@@ -12,6 +12,7 @@ interface CalendarViewProps {
   events?: CalendarEvent[];
   selectedDate?: string;
   onSelectDate?: (date: string) => void;
+  loading?: boolean;
 }
 
 const WEEKDAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
@@ -34,6 +35,7 @@ export default function CalendarView({
   events = [],
   selectedDate,
   onSelectDate,
+  loading = false,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(() => {
     if (selectedDate) {
@@ -93,6 +95,40 @@ export default function CalendarView({
       isCurrentMonth: false,
       dateStr: "",
     });
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-3xl p-6 shadow-sm transition-colors font-sans animate-pulse">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-6 w-40 rounded-lg bg-gray-200 dark:bg-gray-700" />
+          <div className="flex gap-2">
+            <div className="h-9 w-9 rounded-xl bg-gray-200 dark:bg-gray-700" />
+            <div className="h-9 w-9 rounded-xl bg-gray-200 dark:bg-gray-700" />
+          </div>
+        </div>
+        <div className="grid grid-cols-7 mb-3 text-center">
+          {WEEKDAYS.map((day) => (
+            <div
+              key={day}
+              className="h-3 mx-auto w-8 rounded bg-gray-100 dark:bg-gray-700/60"
+            />
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 35 }).map((_, index) => (
+            <div
+              key={index}
+              className="min-h-[85px] rounded-xl bg-gray-50 dark:bg-gray-900/40 p-2 flex flex-col gap-2"
+            >
+              <div className="h-3 w-5 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-3 w-full rounded bg-gray-200/70 dark:bg-gray-700/60" />
+              <div className="h-3 w-2/3 rounded bg-gray-200/70 dark:bg-gray-700/60" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

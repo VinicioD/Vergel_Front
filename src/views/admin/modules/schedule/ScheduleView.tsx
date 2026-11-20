@@ -5,8 +5,6 @@ import CalendarView, {
 import DailyInspections, {
   type Inspection,
 } from "../../../../components/DailyInspections";
-import { Loader2 } from "lucide-react";
-
 export interface ScheduleViewProps {
   events?: CalendarEvent[];
   inspections?: Inspection[];
@@ -46,39 +44,31 @@ export default function ScheduleView({
         </div>
       </div>
 
-      {/* ESTADO DE CARGA GLOBAL */}
-      {loading ? (
-        <div className="w-full flex-1 flex flex-col items-center justify-center">
-          <Loader2 className="animate-spin text-[#5d682e]" size={36} />
-          <p className="text-xs text-gray-500 mt-2">
-            Cargando agenda de citas...
-          </p>
+      {/* GRID PRINCIPAL: CALENDARIO (IZQ) Y LISTA DIARIA (DER) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start lg:flex-1 lg:min-h-0 lg:grid-rows-1 lg:items-stretch">
+        {/* Calendario */}
+        <div className="lg:col-span-7 xl:col-span-8 w-full overflow-x-auto lg:min-h-0 lg:overflow-y-auto">
+          <CalendarView
+            events={events}
+            selectedDate={selectedDate}
+            onSelectDate={onSelectDate}
+            loading={loading}
+          />
         </div>
-      ) : (
-        /* GRID PRINCIPAL: CALENDARIO (IZQ) Y LISTA DIARIA (DER) */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start lg:flex-1 lg:min-h-0 lg:grid-rows-1 lg:items-stretch">
-          {/* Calendario */}
-          <div className="lg:col-span-7 xl:col-span-8 w-full overflow-x-auto lg:min-h-0 lg:overflow-y-auto">
-            <CalendarView
-              events={events}
-              selectedDate={selectedDate}
-              onSelectDate={onSelectDate}
-            />
-          </div>
 
-          {/* Panel lateral de inspecciones */}
-          <div className="lg:col-span-5 xl:col-span-4 w-full lg:min-h-0 lg:flex">
-            <DailyInspections
-              dateTitle={dateTitle}
-              inspections={inspections}
-              onScheduleNew={onScheduleNew}
-              onView={onView}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          </div>
+        {/* Panel lateral de inspecciones */}
+        <div className="lg:col-span-5 xl:col-span-4 w-full lg:min-h-0 lg:flex">
+          <DailyInspections
+            dateTitle={dateTitle}
+            inspections={inspections}
+            onScheduleNew={onScheduleNew}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            loading={loading}
+          />
         </div>
-      )}
+      </div>
     </div>
   );
 }

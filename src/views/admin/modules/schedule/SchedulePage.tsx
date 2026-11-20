@@ -1,8 +1,7 @@
 // src/views/admin/modules/schedule/SchedulePage.tsx
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
-import Swal from "sweetalert2";
 import {
   deleteAppointment,
   getAppointments,
@@ -10,6 +9,8 @@ import {
 import type { Appointment } from "../../../../types/appointment";
 import type { CalendarEvent } from "../../../../components/CalendarView";
 import type { Inspection } from "../../../../components/DailyInspections";
+import Toast, { type ToastType } from "../../../../components/alerts/Toast";
+import ConfirmDialog from "../../../../components/alerts/ConfirmDialog";
 import ScheduleView from "./ScheduleView";
 import AppointmentDetailModal from "./AppointmentDetailModal";
 
@@ -23,20 +24,9 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
   return responseData?.message || responseData?.error || fallback;
 };
 
-const showToast = (icon: "success" | "error", title: string) => {
-  void Swal.fire({
-    toast: true,
-    position: "top-end",
-    icon,
-    title,
-    showConfirmButton: false,
-    timer: 3000,
-    timerProgressBar: true,
-  });
-};
-
 export default function SchedulePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const todayStr = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
@@ -44,6 +34,18 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [viewingAppointment, setViewingAppointment] =
     useState<Appointment | null>(null);
+  const [appointmentToDelete, setAppointmentToDelete] =
+    useState<Appointment | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const toastFromForm = (
+    location.state as { toast?: { type: ToastType; message: string } } | null
+  )?.toast;
+  const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(
+    toastFromForm ?? null,
+  );
+
+  const showToast = (type: ToastType, message: string) =>
+    setToast({ type, message });
 
   // Cargar citas desde el backend con el parámetro "all=true" para el calendario mensual
   useEffect(() => {
@@ -58,7 +60,10 @@ export default function SchedulePage() {
       } catch (error) {
         console.error("Error al cargar la agenda:", error);
         if (isAxiosError(error) && error.response?.status === 403) {
-          alert("No tienes permisos suficientes para ver la agenda completa.");
+          showToast(
+            "error",
+            "No tienes permisos suficientes para ver la agenda completa.",
+          );
         }
       } finally {
         if (active) setLoading(false);
@@ -119,30 +124,21 @@ export default function SchedulePage() {
     navigate(`${id}/edit`);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     const appointment = appointments.find((item) => String(item.id) === id);
-    if (!appointment) return;
+    if (appointment) setAppointmentToDelete(appointment);
+  };
 
-    const confirmation = await Swal.fire({
-      icon: "warning",
-      title: "¿Eliminar cita?",
-      text: `Se eliminará la cita de ${
-        appointment.customer?.legalName || "este cliente"
-      }. Esta acción no se puede deshacer.`,
-      showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "#be123c",
-      cancelButtonColor: "#6b7280",
-    });
+  const confirmDelete = async () => {
+    if (!appointmentToDelete) return;
 
-    if (!confirmation.isConfirmed) return;
-
+    setDeleting(true);
     try {
-      await deleteAppointment(appointment.id);
+      await deleteAppointment(appointmentToDelete.id);
       setAppointments((prev) =>
-        prev.filter((item) => item.id !== appointment.id),
+        prev.filter((item) => item.id !== appointmentToDelete.id),
       );
+      setAppointmentToDelete(null);
       showToast("success", "Cita eliminada correctamente");
     } catch (error) {
       console.error("Error al eliminar la cita:", error);
@@ -150,6 +146,8 @@ export default function SchedulePage() {
         "error",
         getApiErrorMessage(error, "No se pudo eliminar la cita."),
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -177,6 +175,26 @@ export default function SchedulePage() {
           }}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={appointmentToDelete !== null}
+        title="¿Eliminar cita?"
+        message={`Se eliminará la cita de ${
+          appointmentToDelete?.customer?.legalName || "este cliente"
+        }. Esta acción no se puede deshacer.`}
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        isLoading={deleting}
+        onConfirm={() => void confirmDelete()}
+        onClose={() => setAppointmentToDelete(null)}
+      />
+
+      <Toast
+        type={toast?.type ?? "info"}
+        message={toast?.message ?? ""}
+        isOpen={toast !== null}
+        onClose={() => setToast(null)}
+      />
     </>
   );
 }

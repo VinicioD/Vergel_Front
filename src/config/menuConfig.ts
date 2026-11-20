@@ -33,8 +33,8 @@ export const adminMenu = [
   { name: "Movimientos", icon: ArrowRightLeft, path: "/admin/movements" },
   { name: "Colaboradores", icon: User, path: "/admin/users" },
   { name: "Roles", icon: ShieldCheck, path: "/admin/roles" },
-  { name: "Configuración", icon: Settings, path: "/admin/settings" },
   { name: "Auditoría", icon: ScrollText, path: "/admin/audit" },
+  { name: "Configuración", icon: Settings, path: "/admin/settings" },
 ];
 
 // Solo incluye rutas que existen en UserRoutes.tsx

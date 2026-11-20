@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { isAxiosError } from "axios";
 import Input from "../../../../components/Input";
 import Button from "../../../../components/Button";
 import { ArrowLeft } from "lucide-react";
+import Toast, { type ToastType } from "../../../../components/alerts/Toast";
 import type {
   SubscriptionPlan,
   CreateSubscriptionPlanDTO,
@@ -100,6 +102,10 @@ export const Form: React.FC<FormProps> = ({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    message: string;
+  } | null>(null);
 
   const clearError = (field: string) =>
     setErrors((prev) => {
@@ -155,10 +161,19 @@ export const Form: React.FC<FormProps> = ({
 
       if (onSave) onSave();
       if (onClose) onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error al guardar el plan:", error);
-      console.error("Respuesta del servidor:", error.response?.data);
-      const apiErrors = error.response?.data?.errors;
+      const responseData = isAxiosError(error)
+        ? (error.response?.data as
+            | {
+                message?: string;
+                error?: string;
+                errors?: Record<string, string | string[]>;
+              }
+            | undefined)
+        : undefined;
+      console.error("Respuesta del servidor:", responseData);
+      const apiErrors = responseData?.errors;
       if (apiErrors && typeof apiErrors === "object") {
         const formattedErrors: Record<string, string> = {};
         Object.keys(apiErrors).forEach((key) => {
@@ -167,11 +182,13 @@ export const Form: React.FC<FormProps> = ({
         });
         setErrors(formattedErrors);
       } else {
-        alert(
-          error.response?.data?.message ||
-            error.response?.data?.error ||
+        setToast({
+          type: "error",
+          message:
+            responseData?.message ||
+            responseData?.error ||
             "Ocurrió un error interno en el servidor al guardar el plan.",
-        );
+        });
       }
     } finally {
       setLoading(false);
@@ -419,6 +436,12 @@ export const Form: React.FC<FormProps> = ({
           </div>
         </form>
       </div>
+      <Toast
+        type={toast?.type ?? "info"}
+        message={toast?.message ?? ""}
+        isOpen={toast !== null}
+        onClose={() => setToast(null)}
+      />
     </div>
   );
 };
